@@ -21,6 +21,7 @@
             <tr>
                 <th>Usuario</th>
                 <th>Correo</th>
+                <th>Suscripción</th>
                 <th>Monto</th>
                 <th>Fecha de Pago</th>
                 <th>Estado Premium</th>
@@ -53,7 +54,7 @@
         // Función para cargar los usuarios que tienen un pago registrado
         async function cargarSolicitudes() {
             const tbody = document.getElementById("tabla-usuarios");
-            tbody.innerHTML = "<tr><td colspan='6' style='text-align:center;'>Cargando datos...</td></tr>";
+            tbody.innerHTML = "<tr><td colspan='7' style='text-align:center;'>Cargando datos...</td></tr>";
 
             try {
                 const querySnapshot = await getDocs(collection(db, "users"));
@@ -70,6 +71,7 @@
                         tr.innerHTML = `
                             <td>${data.nickname || 'Sin nombre'}</td>
                             <td>${data.email || 'Sin correo'}</td>
+                            <td><b>${data.billingCycle || data.proPlanType || 'Estándar'}</b></td>
                             <td>$${data.amount}</td>
                             <td>${data.paymentDate || 'N/A'}</td>
                             <td>${data.isPremium ? 'Activo (Premium)' : 'Inactivo (Pendiente)'}</td>
@@ -82,12 +84,12 @@
                 });
 
                 if (contador === 0) {
-                    tbody.innerHTML = "<tr><td colspan='6' style='text-align:center;'>No hay solicitudes de pago registradas todavía.</td></tr>";
+                    tbody.innerHTML = "<tr><td colspan='7' style='text-align:center;'>No hay solicitudes de pago registradas todavía.</td></tr>";
                 }
 
             } catch (error) {
                 console.error("Error al cargar:", error);
-                tbody.innerHTML = "<tr><td colspan='6' style='text-align:center; color:red;'>Error al conectar con la base de datos.</td></tr>";
+                tbody.innerHTML = "<tr><td colspan='7' style='text-align:center; color:red;'>Error al conectar con la base de datos.</td></tr>";
             }
         }
 
