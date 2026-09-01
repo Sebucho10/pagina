@@ -9,6 +9,7 @@
         table { width: 100%; border-collapse: collapse; background: white; margin-top: 20px; box-shadow: 0 2px 5px rgba(0,0,0,0.1); }
         th, td { padding: 12px; border: 1px solid #ddd; text-align: left; }
         th { background-color: #333; color: white; }
+        select { padding: 6px; margin-right: 5px; border-radius: 4px; border: 1px solid #ccc; }
         button { padding: 6px 12px; background: #28a745; color: white; border: none; cursor: pointer; border-radius: 4px; font-weight: bold; }
         button:hover { background: #218838; }
     </style>
@@ -76,7 +77,13 @@
                             <td>${data.paymentDate || 'N/A'}</td>
                             <td>${data.isPremium ? 'Activo (Premium)' : 'Inactivo (Pendiente)'}</td>
                             <td>
-                                ${!data.isPremium ? `<button onclick="activarUsuario('${documento.id}')">Activar</button>` : 'Aprobado'}
+                                ${!data.isPremium ? `
+                                    <select id="duracion-${documento.id}">
+                                        <option value="30">30 Días (Mensual)</option>
+                                        <option value="365">1 Año (Anual)</option>
+                                    </select>
+                                    <button onclick="activarUsuario('${documento.id}')">Activar</button>
+                                ` : 'Aprobado'}
                             </td>
                         `;
                         tbody.appendChild(tr);
@@ -93,24 +100,29 @@
             }
         }
 
-        // Función global para activar la cuenta y calcular los 30 días de vencimiento
+        // Función global para activar la cuenta según el tiempo seleccionado
         window.activarUsuario = async function(userId) {
-            if (!confirm("¿Estás seguro de activar la cuenta de este usuario?")) return;
+            const selectElement = document.getElementById(`duracion-${userId}`);
+            const diasSeleccionados = parseInt(selectElement.value);
+            
+            const tipoTexto = diasSeleccionados === 365 ? "1 Año (Anual)" : "30 Días (Mensual)";
+            if (!confirm(`¿Estás seguro de activar la cuenta por ${tipoTexto}?`)) return;
 
             const fechaActual = new Date();
             const fechaExpiracion = new Date();
-            fechaExpiracion.setDate(fechaActual.getDate() + 30); // Suma 30 días exactos
+            fechaExpiracion.setDate(fechaActual.getDate() + diasSeleccionados); // Suma 30 o 365 días según elijas
 
             try {
                 const userRef = doc(db, "users", userId);
                 await updateDoc(userRef, {
                     isPremium: true,
                     activatedAt: fechaActual.toISOString(),
-                    subscriptionExpiry: fechaExpiracion.toISOString()
+                    subscriptionExpiry: fechaExpiracion.toISOString(),
+                    planDurationDays: diasSeleccionados
                 });
 
-                alert("¡Cuenta activada con éxito! El vencimiento se calculó automáticamente.");
-                cargarSolicitudes(); // Recarga la tabla para ver reflejado el cambio
+                alert(`¡Cuenta activada con éxito por ${tipoTexto}!`);
+                cargarSolicitudes(); // Recarga la tabla
             } catch (error) {
                 console.error("Error al activar: ", error);
                 alert("Hubo un error al activar la cuenta.");
