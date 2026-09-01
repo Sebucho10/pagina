@@ -7,16 +7,18 @@
         body { font-family: Arial, sans-serif; margin: 20px; background: #f4f4f9; }
         h2 { color: #333; }
         table { width: 100%; border-collapse: collapse; background: white; margin-top: 20px; box-shadow: 0 2px 5px rgba(0,0,0,0.1); }
-        th, td { padding: 12px; border: 1px solid #ddd; text-align: left; }
+        th, td { padding: 12px; border: 1px solid #ddd; text-align: left; vertical-align: middle; }
         th { background-color: #333; color: white; }
         select { padding: 6px; margin-right: 5px; border-radius: 4px; border: 1px solid #ccc; }
-        button { padding: 6px 12px; background: #28a745; color: white; border: none; cursor: pointer; border-radius: 4px; font-weight: bold; }
-        button:hover { background: #218838; }
+        button.btn-activar { padding: 6px 12px; background: #28a745; color: white; border: none; cursor: pointer; border-radius: 4px; font-weight: bold; }
+        button.btn-activar:hover { background: #218838; }
+        button.btn-desactivar { padding: 6px 12px; background: #dc3545; color: white; border: none; cursor: pointer; border-radius: 4px; font-weight: bold; }
+        button.btn-desactivar:hover { background: #c82333; }
     </style>
 </head>
 <body>
 
-    <h2>Lista de Todos los Usuarios</h2>
+    <h2>Lista y Gestión de Usuarios</h2>
     <table>
         <thead>
             <tr>
@@ -39,7 +41,6 @@
         import { initializeApp } from "https://www.gstatic.com/firebasejs/10.8.0/firebase-app.js";
         import { getFirestore, collection, getDocs, doc, updateDoc } from "https://www.gstatic.com/firebasejs/10.8.0/firebase-firestore.js";
 
-        // Configuración real de tu proyecto de Firebase
         const firebaseConfig = {
             apiKey: "AIzaSyAw98_ayavN4p2Lk-P-1Fz-_f7bKrY_TAl0",
             authDomain: "dpdefault-48735.firebaseapp.com",
@@ -52,19 +53,20 @@
         const app = initializeApp(firebaseConfig);
         const db = getFirestore(app);
 
-        // Función para cargar todos los usuarios de la base de datos
         async function cargarSolicitudes() {
             const tbody = document.getElementById("tabla-usuarios");
             tbody.innerHTML = "<tr><td colspan='7' style='text-align:center;'>Cargando datos...</td></tr>";
 
             try {
                 const querySnapshot = await getDocs(collection(db, "users"));
-                tbody.innerHTML = ""; // Limpiar texto de carga
+                tbody.innerHTML = ""; 
 
                 let contador = 0;
                 querySnapshot.forEach((documento) => {
                     const data = documento.data();
                     contador++;
+                    
+                    const isPrem = data.isPremium === true;
                     
                     const tr = document.createElement("tr");
                     tr.innerHTML = `
@@ -73,15 +75,16 @@
                         <td><b>${data.billingCycle || data.proPlanType || 'No especificado'}</b></td>
                         <td>${data.amount !== undefined ? '$' + data.amount : 'N/A'}</td>
                         <td>${data.paymentDate || 'N/A'}</td>
-                        <td>${data.isPremium ? 'Activo (Premium)' : 'Inactivo (Pendiente)'}</td>
+                        <td>${isPrem ? 'Activo (Premium)' : 'Inactivo (Pendiente)'}</td>
                         <td>
-                            ${!data.isPremium ? `
-                                <select id="duracion-${documento.id}">
-                                    <option value="30">30 Días (Mensual)</option>
-                                    <option value="365">1 Año (Anual)</option>
-                                </select>
-                                <button onclick="activarUsuario('${documento.id}')">Activar</button>
-                            ` : 'Aprobado'}
+                            <select id="duracion-${documento.id}">
+                                <option value="30">30 Días (Mensual)</option>
+                                <option value="365">1 Año (Anual)</option>
+                            </select>
+                            ${isPrem 
+                                ? `<button class="btn-desactivar" onclick="cambiarEstado('${documento.id}', false)">Desactivar</button>`
+                                : `<button class="btn-activar" onclick="cambiarEstado('${documento.id}', true)">Activar</button>`
+                            }
                         </td>
                     `;
                     tbody.appendChild(tr);
@@ -97,13 +100,17 @@
             }
         }
 
-        // Función global para activar la cuenta según el tiempo seleccionado
-        window.activarUsuario = async function(userId) {
+        // Función global para activar o desactivar la cuenta
+        window.cambiarEstado = async function(userId, activar) {
             const selectElement = document.getElementById(`duracion-${userId}`);
             const diasSeleccionados = parseInt(selectElement.value);
-            
             const tipoTexto = diasSeleccionados === 365 ? "1 Año (Anual)" : "30 Días (Mensual)";
-            if (!confirm(`¿Estás seguro de activar la cuenta por ${tipoTexto}?`)) return;
+
+            if (activar) {
+                if (!confirm(`¿Estás seguro de activar la cuenta por ${tipoTexto}?`)) return;
+            } else {
+                if (!confirm("¿Estás seguro de desactivar la cuenta de este usuario?")) return;
+            }
 
             const fechaActual = new Date();
             const fechaExpiracion = new Date();
@@ -111,22 +118,30 @@
 
             try {
                 const userRef = doc(db, "users", userId);
-                await updateDoc(userRef, {
-                    isPremium: true,
-                    activatedAt: fechaActual.toISOString(),
-                    subscriptionExpiry: fechaExpiracion.toISOString(),
-                    planDurationDays: diasSeleccionados
-                });
+                
+                if (activar) {
+                    await updateDoc(userRef, {
+                        isPremium: true,
+                        activatedAt: fechaActual.toISOString(),
+                        subscriptionExpiry: fechaExpiracion.toISOString(),
+                        planDurationDays: diasSeleccionados
+                    });
+                    alert(`¡Cuenta activada con éxito por ${tipoTexto}!`);
+                } else {
+                    await updateDoc(userRef, {
+                        isPremium: false,
+                        subscriptionExpiry: null
+                    });
+                    alert("¡Cuenta desactivada con éxito!");
+                }
 
-                alert(`¡Cuenta activada con éxito por ${tipoTexto}!`);
                 cargarSolicitudes(); // Recarga la tabla
             } catch (error) {
-                console.error("Error al activar: ", error);
-                alert("Hubo un error al activar la cuenta.");
+                console.error("Error al cambiar estado: ", error);
+                alert("Hubo un error al actualizar la cuenta.");
             }
         }
 
-        // Ejecutar al cargar la página
         cargarSolicitudes();
     </script>
 </body>
