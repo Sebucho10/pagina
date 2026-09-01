@@ -5,10 +5,11 @@
     <title>Panel de Administración - Suscripciones</title>
     <style>
         body { font-family: Arial, sans-serif; margin: 20px; background: #f4f4f9; }
-        table { width: 100%; border-collapse: collapse; background: white; margin-top: 20px; }
+        h2 { color: #333; }
+        table { width: 100%; border-collapse: collapse; background: white; margin-top: 20px; box-shadow: 0 2px 5px rgba(0,0,0,0.1); }
         th, td { padding: 12px; border: 1px solid #ddd; text-align: left; }
         th { background-color: #333; color: white; }
-        button { padding: 6px 12px; background: #28a745; color: white; border: none; cursor: pointer; border-radius: 4px; }
+        button { padding: 6px 12px; background: #28a745; color: white; border: none; cursor: pointer; border-radius: 4px; font-weight: bold; }
         button:hover { background: #218838; }
     </style>
 </head>
@@ -34,16 +35,16 @@
     <!-- SDK de Firebase (Modular v10) -->
     <script type="module">
         import { initializeApp } from "https://www.gstatic.com/firebasejs/10.8.0/firebase-app.js";
-        import { getFirestore, collection, getDocs, doc, updateDate, updateDoc } from "https://www.gstatic.com/firebasejs/10.8.0/firebase-firestore.js";
+        import { getFirestore, collection, getDocs, doc, updateDoc } from "https://www.gstatic.com/firebasejs/10.8.0/firebase-firestore.js";
 
-        // Configuración de tu proyecto de Firebase
+        // Configuración real de tu proyecto de Firebase
         const firebaseConfig = {
-            apiKey: "TU_API_KEY",
-            authDomain: "TU_AUTH_DOMAIN",
+            apiKey: "AIzaSyAw98_ayavN4p2Lk-P-1Fz-_f7bKrY_TAl0",
+            authDomain: "dpdefault-48735.firebaseapp.com",
             projectId: "dpdefault-48735",
-            storageBucket: "TU_STORAGE_BUCKET",
-            messagingSenderId: "TU_MESSAGING_SENDER_ID",
-            appId: "TU_APP_ID"
+            storageBucket: "dpdefault-48735.firebasestorage.app",
+            messagingSenderId: "176010812894",
+            appId: "1:176010812894:web:aab3ff030cf228a0d3914f"
         };
 
         const app = initializeApp(firebaseConfig);
@@ -52,32 +53,48 @@
         // Función para cargar los usuarios que tienen un pago registrado
         async function cargarSolicitudes() {
             const tbody = document.getElementById("tabla-usuarios");
-            tbody.innerHTML = "";
+            tbody.innerHTML = "<tr><td colspan='6' style='text-align:center;'>Cargando datos...</td></tr>";
 
-            const querySnapshot = await getDocs(collection(db, "users"));
-            querySnapshot.forEach((documento) => {
-                const data = documento.data();
-                
-                // Filtramos solo los que tengan datos de pago (ej. amount > 0)
-                if (data.amount && data.amount > 0) {
-                    const tr = document.createElement("tr");
-                    tr.innerHTML = `
-                        <td>${data.nickname || 'Sin nombre'}</td>
-                        <td>${data.email}</td>
-                        <td>$${data.amount}</td>
-                        <td>${data.paymentDate || 'N/A'}</td>
-                        <td>${data.isPremium ? 'Activo (Premium)' : 'Inactivo (Pendiente)'}</td>
-                        <td>
-                            ${!data.isPremium ? `<button onclick="activarUsuario('${documento.id}')">Activar</button>` : 'Aprobado'}
-                        </td>
-                    `;
-                    tbody.appendChild(tr);
+            try {
+                const querySnapshot = await getDocs(collection(db, "users"));
+                tbody.innerHTML = ""; // Limpiar texto de carga
+
+                let contador = 0;
+                querySnapshot.forEach((documento) => {
+                    const data = documento.data();
+                    
+                    // Filtramos solo los que tengan datos de pago (ej. amount > 0)
+                    if (data.amount && data.amount > 0) {
+                        contador++;
+                        const tr = document.createElement("tr");
+                        tr.innerHTML = `
+                            <td>${data.nickname || 'Sin nombre'}</td>
+                            <td>${data.email || 'Sin correo'}</td>
+                            <td>$${data.amount}</td>
+                            <td>${data.paymentDate || 'N/A'}</td>
+                            <td>${data.isPremium ? 'Activo (Premium)' : 'Inactivo (Pendiente)'}</td>
+                            <td>
+                                ${!data.isPremium ? `<button onclick="activarUsuario('${documento.id}')">Activar</button>` : 'Aprobado'}
+                            </td>
+                        `;
+                        tbody.appendChild(tr);
+                    }
+                });
+
+                if (contador === 0) {
+                    tbody.innerHTML = "<tr><td colspan='6' style='text-align:center;'>No hay solicitudes de pago registradas todavía.</td></tr>";
                 }
-            });
+
+            } catch (error) {
+                console.error("Error al cargar:", error);
+                tbody.innerHTML = "<tr><td colspan='6' style='text-align:center; color:red;'>Error al conectar con la base de datos.</td></tr>";
+            }
         }
 
         // Función global para activar la cuenta y calcular los 30 días de vencimiento
         window.activarUsuario = async function(userId) {
+            if (!confirm("¿Estás seguro de activar la cuenta de este usuario?")) return;
+
             const fechaActual = new Date();
             const fechaExpiracion = new Date();
             fechaExpiracion.setDate(fechaActual.getDate() + 30); // Suma 30 días exactos
@@ -91,7 +108,7 @@
                 });
 
                 alert("¡Cuenta activada con éxito! El vencimiento se calculó automáticamente.");
-                cargarSolicitudes(); // Recarga la tabla
+                cargarSolicitudes(); // Recarga la tabla para ver reflejado el cambio
             } catch (error) {
                 console.error("Error al activar: ", error);
                 alert("Hubo un error al activar la cuenta.");
