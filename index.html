@@ -17,54 +17,54 @@
             --success: #22c55e;
         }
 
-        /* Configuración global adaptable */
         * {
             box-sizing: border-box;
         }
 
+        /* Eliminamos los márgenes laterales grandes para ocupar todo el ancho */
         body { 
             font-family: 'Inter', sans-serif; 
             background-color: var(--bg-color); 
             color: var(--text-main); 
             margin: 0; 
-            padding: clamp(10px, 3vw, 40px) clamp(10px, 2vw, 20px); 
+            padding: 20px 10px; 
         }
 
+        /* Contenedor expandido al 100% */
         .container { 
             width: 100%;
-            max-width: 1200px; 
+            max-width: 100%; 
             margin: 0 auto; 
+            padding: 0 10px;
         }
 
-        /* Encabezado adaptable (se acomoda en columna en móviles y en fila en PC) */
         .header-panel { 
             display: flex; 
             justify-content: space-between; 
             align-items: center; 
-            margin-bottom: clamp(16px, 3vw, 24px); 
+            margin-bottom: 20px; 
             flex-wrap: wrap; 
             gap: 15px; 
         }
 
         h2 { 
             margin: 0; 
-            font-size: clamp(1.2rem, 2.5vw, 1.5rem); 
+            font-size: clamp(1.2rem, 2vw, 1.5rem); 
             font-weight: 700; 
         }
 
-        /* Caja de búsqueda fluida */
         .search-box { 
             position: relative; 
             width: 100%;
-            max-width: 300px; 
+            max-width: 350px; 
         }
 
         .search-box input { 
             width: 100%; 
-            padding: clamp(8px, 1.5vw, 10px) clamp(12px, 2vw, 14px) clamp(8px, 1.5vw, 10px) 38px; 
+            padding: 10px 14px 10px 38px; 
             border: 1px solid var(--border-color); 
             border-radius: 8px; 
-            font-size: clamp(0.85rem, 1.5vw, 0.95rem); 
+            font-size: 14px; 
             outline: none; 
             background: #fff; 
         }
@@ -79,7 +79,7 @@
             fill: var(--text-muted); 
         }
 
-        /* Contenedor de la tabla con scroll horizontal automático para pantallas chicas */
+        /* Tarjeta de tabla estirada a lo ancho total */
         .table-card { 
             background: var(--card-bg); 
             border-radius: 12px; 
@@ -94,23 +94,23 @@
             width: 100%; 
             border-collapse: collapse; 
             text-align: left; 
-            min-width: 700px; /* Asegura que la tabla no se apriete de más en celulares */
         }
 
         th { 
             background-color: #f1f5f9; 
             color: var(--text-muted); 
             font-weight: 600; 
-            font-size: clamp(0.7rem, 1.2vw, 0.75rem); 
+            font-size: 12px; 
             text-transform: uppercase; 
-            padding: clamp(10px, 2vw, 14px) clamp(12px, 2vw, 20px); 
+            padding: 16px 20px; 
             border-bottom: 1px solid var(--border-color); 
+            white-space: nowrap;
         }
 
         td { 
-            padding: clamp(10px, 2vw, 16px) clamp(12px, 2vw, 20px); 
+            padding: 16px 20px; 
             border-bottom: 1px solid var(--border-color); 
-            font-size: clamp(0.8rem, 1.4vw, 0.9rem); 
+            font-size: 14px; 
             vertical-align: middle; 
         }
 
@@ -118,36 +118,34 @@
             background-color: #fcfdfe; 
         }
 
-        /* Etiquetas adaptables */
         .badge { 
             display: inline-flex; 
             align-items: center; 
-            padding: clamp(3px, 1vw, 4px) clamp(8px, 1.5vw, 10px); 
+            padding: 4px 10px; 
             border-radius: 9999px; 
-            font-size: clamp(0.7rem, 1.2vw, 0.75rem); 
+            font-size: 12px; 
             font-weight: 500; 
             white-space: nowrap;
         }
         .badge-active { background-color: #dcfce7; color: #15803d; }
         .badge-inactive { background-color: #fee2e2; color: #b91c1c; }
 
-        /* Controles de la tabla adaptables */
         select { 
-            padding: clamp(6px, 1vw, 8px) clamp(8px, 1.5vw, 12px); 
+            padding: 8px 12px; 
             border: 1px solid var(--border-color); 
             border-radius: 6px; 
             background-color: #fff; 
-            font-size: clamp(0.75rem, 1.3vw, 0.85rem); 
+            font-size: 13px; 
             outline: none; 
-            margin-right: 6px; 
+            margin-right: 8px; 
             cursor: pointer; 
         }
 
         button { 
-            padding: clamp(6px, 1vw, 8px) clamp(10px, 1.5vw, 14px); 
+            padding: 8px 14px; 
             border: none; 
             border-radius: 6px; 
-            font-size: clamp(0.75rem, 1.3vw, 0.85rem); 
+            font-size: 13px; 
             font-weight: 600; 
             cursor: pointer; 
             white-space: nowrap;
