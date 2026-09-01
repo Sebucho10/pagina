@@ -16,7 +16,7 @@
 </head>
 <body>
 
-    <h2>Solicitudes de Suscripción Pendientes</h2>
+    <h2>Lista de Todos los Usuarios</h2>
     <table>
         <thead>
             <tr>
@@ -52,7 +52,7 @@
         const app = initializeApp(firebaseConfig);
         const db = getFirestore(app);
 
-        // Función para cargar los usuarios que tienen un pago registrado
+        // Función para cargar todos los usuarios de la base de datos
         async function cargarSolicitudes() {
             const tbody = document.getElementById("tabla-usuarios");
             tbody.innerHTML = "<tr><td colspan='7' style='text-align:center;'>Cargando datos...</td></tr>";
@@ -64,34 +64,31 @@
                 let contador = 0;
                 querySnapshot.forEach((documento) => {
                     const data = documento.data();
+                    contador++;
                     
-                    // Filtramos solo los que tengan datos de pago (ej. amount > 0)
-                    if (data.amount && data.amount > 0) {
-                        contador++;
-                        const tr = document.createElement("tr");
-                        tr.innerHTML = `
-                            <td>${data.nickname || 'Sin nombre'}</td>
-                            <td>${data.email || 'Sin correo'}</td>
-                            <td><b>${data.billingCycle || data.proPlanType || 'Estándar'}</b></td>
-                            <td>$${data.amount}</td>
-                            <td>${data.paymentDate || 'N/A'}</td>
-                            <td>${data.isPremium ? 'Activo (Premium)' : 'Inactivo (Pendiente)'}</td>
-                            <td>
-                                ${!data.isPremium ? `
-                                    <select id="duracion-${documento.id}">
-                                        <option value="30">30 Días (Mensual)</option>
-                                        <option value="365">1 Año (Anual)</option>
-                                    </select>
-                                    <button onclick="activarUsuario('${documento.id}')">Activar</button>
-                                ` : 'Aprobado'}
-                            </td>
-                        `;
-                        tbody.appendChild(tr);
-                    }
+                    const tr = document.createElement("tr");
+                    tr.innerHTML = `
+                        <td>${data.nickname || data.nombre || 'Sin nombre'}</td>
+                        <td>${data.email || 'Sin correo'}</td>
+                        <td><b>${data.billingCycle || data.proPlanType || 'No especificado'}</b></td>
+                        <td>${data.amount !== undefined ? '$' + data.amount : 'N/A'}</td>
+                        <td>${data.paymentDate || 'N/A'}</td>
+                        <td>${data.isPremium ? 'Activo (Premium)' : 'Inactivo (Pendiente)'}</td>
+                        <td>
+                            ${!data.isPremium ? `
+                                <select id="duracion-${documento.id}">
+                                    <option value="30">30 Días (Mensual)</option>
+                                    <option value="365">1 Año (Anual)</option>
+                                </select>
+                                <button onclick="activarUsuario('${documento.id}')">Activar</button>
+                            ` : 'Aprobado'}
+                        </td>
+                    `;
+                    tbody.appendChild(tr);
                 });
 
                 if (contador === 0) {
-                    tbody.innerHTML = "<tr><td colspan='7' style='text-align:center;'>No hay solicitudes de pago registradas todavía.</td></tr>";
+                    tbody.innerHTML = "<tr><td colspan='7' style='text-align:center;'>No hay usuarios registrados en la base de datos.</td></tr>";
                 }
 
             } catch (error) {
@@ -110,7 +107,7 @@
 
             const fechaActual = new Date();
             const fechaExpiracion = new Date();
-            fechaExpiracion.setDate(fechaActual.getDate() + diasSeleccionados); // Suma 30 o 365 días según elijas
+            fechaExpiracion.setDate(fechaActual.getDate() + diasSeleccionados);
 
             try {
                 const userRef = doc(db, "users", userId);
