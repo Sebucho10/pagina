@@ -2,6 +2,7 @@
 <html lang="es">
 <head>
     <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
     <title>Panel de Administración - Suscripciones</title>
     <link href="https://fonts.googleapis.com/css2?family=Inter:wght@400;500;600;700&display=swap" rel="stylesheet">
     <style>
@@ -15,26 +16,152 @@
             --danger: #ef4444;
             --success: #22c55e;
         }
-        body { font-family: 'Inter', sans-serif; background-color: var(--bg-color); color: var(--text-main); margin: 0; padding: 40px 20px; }
-        .container { max-width: 1200px; margin: 0 auto; }
-        .header-panel { display: flex; justify-content: space-between; align-items: center; margin-bottom: 24px; flex-wrap: wrap; gap: 15px; }
-        h2 { margin: 0; font-size: 24px; font-weight: 700; }
-        .search-box { position: relative; width: 300px; }
-        .search-box input { width: 100%; padding: 10px 14px 10px 38px; border: 1px solid var(--border-color); border-radius: 8px; font-size: 14px; outline: none; background: #fff; }
-        .search-box svg { position: absolute; left: 12px; top: 50%; transform: translateY(-50%); width: 16px; height: 16px; fill: var(--text-muted); }
-        .table-card { background: var(--card-bg); border-radius: 12px; box-shadow: 0 4px 6px -1px rgba(0,0,0,0.05); overflow: hidden; border: 1px solid var(--border-color); }
-        table { width: 100%; border-collapse: collapse; text-align: left; }
-        th { background-color: #f1f5f9; color: var(--text-muted); font-weight: 600; font-size: 12px; text-transform: uppercase; padding: 14px 20px; border-bottom: 1px solid var(--border-color); }
-        td { padding: 16px 20px; border-bottom: 1px solid var(--border-color); font-size: 14px; vertical-align: middle; }
-        tr:hover { background-color: #fcfdfe; }
-        .badge { display: inline-flex; align-items: center; padding: 4px 10px; border-radius: 9999px; font-size: 12px; font-weight: 500; }
+
+        /* Configuración global adaptable */
+        * {
+            box-sizing: border-box;
+        }
+
+        body { 
+            font-family: 'Inter', sans-serif; 
+            background-color: var(--bg-color); 
+            color: var(--text-main); 
+            margin: 0; 
+            padding: clamp(10px, 3vw, 40px) clamp(10px, 2vw, 20px); 
+        }
+
+        .container { 
+            width: 100%;
+            max-width: 1200px; 
+            margin: 0 auto; 
+        }
+
+        /* Encabezado adaptable (se acomoda en columna en móviles y en fila en PC) */
+        .header-panel { 
+            display: flex; 
+            justify-content: space-between; 
+            align-items: center; 
+            margin-bottom: clamp(16px, 3vw, 24px); 
+            flex-wrap: wrap; 
+            gap: 15px; 
+        }
+
+        h2 { 
+            margin: 0; 
+            font-size: clamp(1.2rem, 2.5vw, 1.5rem); 
+            font-weight: 700; 
+        }
+
+        /* Caja de búsqueda fluida */
+        .search-box { 
+            position: relative; 
+            width: 100%;
+            max-width: 300px; 
+        }
+
+        .search-box input { 
+            width: 100%; 
+            padding: clamp(8px, 1.5vw, 10px) clamp(12px, 2vw, 14px) clamp(8px, 1.5vw, 10px) 38px; 
+            border: 1px solid var(--border-color); 
+            border-radius: 8px; 
+            font-size: clamp(0.85rem, 1.5vw, 0.95rem); 
+            outline: none; 
+            background: #fff; 
+        }
+
+        .search-box svg { 
+            position: absolute; 
+            left: 12px; 
+            top: 50%; 
+            transform: translateY(-50%); 
+            width: 16px; 
+            height: 16px; 
+            fill: var(--text-muted); 
+        }
+
+        /* Contenedor de la tabla con scroll horizontal automático para pantallas chicas */
+        .table-card { 
+            background: var(--card-bg); 
+            border-radius: 12px; 
+            box-shadow: 0 4px 6px -1px rgba(0,0,0,0.05); 
+            border: 1px solid var(--border-color); 
+            width: 100%;
+            overflow-x: auto; 
+            -webkit-overflow-scrolling: touch;
+        }
+
+        table { 
+            width: 100%; 
+            border-collapse: collapse; 
+            text-align: left; 
+            min-width: 700px; /* Asegura que la tabla no se apriete de más en celulares */
+        }
+
+        th { 
+            background-color: #f1f5f9; 
+            color: var(--text-muted); 
+            font-weight: 600; 
+            font-size: clamp(0.7rem, 1.2vw, 0.75rem); 
+            text-transform: uppercase; 
+            padding: clamp(10px, 2vw, 14px) clamp(12px, 2vw, 20px); 
+            border-bottom: 1px solid var(--border-color); 
+        }
+
+        td { 
+            padding: clamp(10px, 2vw, 16px) clamp(12px, 2vw, 20px); 
+            border-bottom: 1px solid var(--border-color); 
+            font-size: clamp(0.8rem, 1.4vw, 0.9rem); 
+            vertical-align: middle; 
+        }
+
+        tr:hover { 
+            background-color: #fcfdfe; 
+        }
+
+        /* Etiquetas adaptables */
+        .badge { 
+            display: inline-flex; 
+            align-items: center; 
+            padding: clamp(3px, 1vw, 4px) clamp(8px, 1.5vw, 10px); 
+            border-radius: 9999px; 
+            font-size: clamp(0.7rem, 1.2vw, 0.75rem); 
+            font-weight: 500; 
+            white-space: nowrap;
+        }
         .badge-active { background-color: #dcfce7; color: #15803d; }
         .badge-inactive { background-color: #fee2e2; color: #b91c1c; }
-        select { padding: 8px 12px; border: 1px solid var(--border-color); border-radius: 6px; background-color: #fff; font-size: 13px; outline: none; margin-right: 8px; cursor: pointer; }
-        button { padding: 8px 14px; border: none; border-radius: 6px; font-size: 13px; font-weight: 600; cursor: pointer; }
+
+        /* Controles de la tabla adaptables */
+        select { 
+            padding: clamp(6px, 1vw, 8px) clamp(8px, 1.5vw, 12px); 
+            border: 1px solid var(--border-color); 
+            border-radius: 6px; 
+            background-color: #fff; 
+            font-size: clamp(0.75rem, 1.3vw, 0.85rem); 
+            outline: none; 
+            margin-right: 6px; 
+            cursor: pointer; 
+        }
+
+        button { 
+            padding: clamp(6px, 1vw, 8px) clamp(10px, 1.5vw, 14px); 
+            border: none; 
+            border-radius: 6px; 
+            font-size: clamp(0.75rem, 1.3vw, 0.85rem); 
+            font-weight: 600; 
+            cursor: pointer; 
+            white-space: nowrap;
+        }
+
         .btn-activar { background-color: var(--success); color: white; }
         .btn-desactivar { background-color: var(--danger); color: white; }
-        .actions-cell { display: flex; align-items: center; gap: 4px; }
+
+        .actions-cell { 
+            display: flex; 
+            align-items: center; 
+            gap: 6px; 
+            flex-wrap: wrap;
+        }
     </style>
 </head>
 <body>
@@ -156,7 +283,6 @@
             renderizarTabla(filtrados);
         }
 
-        // Función que registra el pago REAL y activa la cuenta al mismo tiempo
         window.registrarYActivar = async function(userId) {
             const selectElement = document.getElementById(`duracion-${userId}`);
             const diasSeleccionados = parseInt(selectElement.value);
@@ -166,7 +292,6 @@
             if (!confirm(`¿Confirmas que YA recibiste el dinero en PayPal para este usuario (${tipoPlan})?`)) return;
 
             const fechaActual = new Date();
-            // Formatear la fecha bonita para que se vea en la tabla
             const fechaFormateada = fechaActual.toISOString().replace('T', ' ').substring(0, 19);
             
             const fechaExpiracion = new Date();
