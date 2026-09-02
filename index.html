@@ -14,7 +14,6 @@
             --text-muted: #64748b;
             --border-color: #e2e8f0;
             --danger: #ef4444;
-            --success: #22c55e;
         }
         * { box-sizing: border-box; }
         body { 
@@ -195,7 +194,7 @@
             white-space: nowrap;
         }
         .btn-desactivar { background-color: var(--danger); color: white; }
-        .btn-activar { background-color: var(--success); color: white; }
+        .text-muted-action { color: var(--text-muted); font-size: 13px; font-style: italic; }
         .actions-cell { 
             display: flex; 
             align-items: center; 
@@ -336,13 +335,6 @@ const db = getFirestore(app);
 
 let listaUsuariosGlobal = [];
 
-// NOTA: Como la página de GitHub (paypal-success.html) tiene una redirección estática 
-// a "dpdefault://paypal-success", cualquier intento de entrar directamente a esa página web 
-// causará bucles de redirección en el navegador si no procesa correctamente los parámetros o si intenta saltar sin fin.
-// Este script remueve por completo cualquier salto automático desde el index web hacia el protocolo de la app,
-// evitando que el navegador se quede atascado intentando redirigir infinitamente. 
-// La app móvil debe encargarse de escuchar cuando reciba el callback o procesar el resultado de forma nativa.
-
 function formatearFecha(fechaData) {
     if (!fechaData) return 'Sin registro';
     if (typeof fechaData === 'object' && fechaData.seconds) {
@@ -434,6 +426,11 @@ window.renderizarTabla = function(usuarios) {
 
         const safeName = String(nombreUsuario).replace(/'/g, "\\'");
 
+        // Se elimina por completo el botón de activación. Solo se muestra "Desactivar" si está activo.
+        const botonAccion = isPrem
+            ? `<button class="btn-desactivar" onclick="desactivarUsuario('${data.id}')">Desactivar</button>`
+            : `<span class="text-muted-action">Sin acción</span>`;
+
         tr.innerHTML = `
             <td><span class="user-link" onclick="verHistorial('${data.id}', '${safeName}')">${nombreUsuario}</span></td>
             <td>${data.email || "Sin correo"}</td>
@@ -444,10 +441,7 @@ window.renderizarTabla = function(usuarios) {
             <td>${estadoHTML}</td>
             <td>
                 <div class="actions-cell">
-                    ${isPrem
-                        ? `<button class="btn-desactivar" onclick="cambiarEstado('${data.id}', false)">Desactivar</button>`
-                        : `<button class="btn-activar" onclick="cambiarEstado('${data.id}', true)">Activar</button>`
-                    }
+                    ${botonAccion}
                 </div>
             </td>`;
         tbody.appendChild(tr);
@@ -604,40 +598,23 @@ function actualizarContadorNotificaciones() {
     }
 }
 
-window.cambiarEstado = async function(userId, activar) {
-    const mensaje = activar 
-        ? "¿Estás seguro de activar la cuenta de este usuario como Premium?" 
-        : "¿Estás seguro de desactivar la cuenta de este usuario?";
-        
-    if (!confirm(mensaje)) return;
+// Función dedicada exclusivamente a desactivar cuentas (sin opción de forzar activación)
+window.desactivarUsuario = async function(userId) {
+    if (!confirm("¿Estás seguro de desactivar la cuenta de este usuario?")) return;
 
     try {
         const userRef = doc(db, "users", userId);
         
-        if (activar) {
-            // Calcula una fecha por defecto de 30 días o activa los flags de pago y premium
-            const fechaActual = new Date();
-            const fechaExpiracion = new Date();
-            fechaExpiracion.setDate(fechaActual.getDate() + 30);
-
-            await updateDoc(userRef, {
-                isPremium: true,
-                paymentReceived: true,
-                subscriptionExpiry: fechaExpiracion
-            });
-            alert("¡Cuenta activada exitosamente!");
-        } else {
-            await updateDoc(userRef, {
-                isPremium: false,
-                paymentReceived: false,
-                subscriptionExpiry: null
-            });
-            alert("¡Cuenta desactivada!");
-        }
-
+        await updateDoc(userRef, {
+            isPremium: false,
+            paymentReceived: false,
+            subscriptionExpiry: null
+        });
+        
+        alert("¡Cuenta desactivada exitosamente!");
         cargarSolicitudes();
     } catch (error) {
-        console.error("Error al cambiar estado:", error);
+        console.error("Error al desactivar cuenta:", error);
         alert("Hubo un error al actualizar el estado de la cuenta.");
     }
 }
