@@ -134,17 +134,6 @@
         .badge-inactive { background-color: #fee2e2; color: #b91c1c; }
         .badge-received { background-color: #e0f2fe; color: #0369a1; }
 
-        select { 
-            padding: 8px 12px; 
-            border: 1px solid var(--border-color); 
-            border-radius: 6px; 
-            background-color: #fff; 
-            font-size: 13px; 
-            outline: none; 
-            margin-right: 8px; 
-            cursor: pointer; 
-        }
-
         button { 
             padding: 8px 14px; 
             border: none; 
@@ -155,7 +144,6 @@
             white-space: nowrap;
         }
 
-        .btn-activar { background-color: var(--success); color: white; }
         .btn-desactivar { background-color: var(--danger); color: white; }
 
         .actions-cell { 
@@ -234,7 +222,7 @@
                         <th>Fecha del Último Pago</th>
                         <th>Pago Recibido</th>
                         <th>Estado Premium</th>
-                        <th>Acción / Confirmar Pago</th>
+                        <th>Acción</th>
                     </tr>
                 </thead>
                 <tbody id="tabla-usuarios">
@@ -268,7 +256,7 @@
 
     <script type="module">
         import { initializeApp } from "https://www.gstatic.com/firebasejs/10.8.0/firebase-app.js";
-        import { getFirestore, collection, getDocs, doc, updateDoc, addDoc } from "https://www.gstatic.com/firebasejs/10.8.0/firebase-firestore.js";
+        import { getFirestore, collection, getDocs, doc, updateDoc } from "https://www.gstatic.com/firebasejs/10.8.0/firebase-firestore.js";
 
         const firebaseConfig = {
             apiKey: "AIzaSyAw98_ayavN4p2Lk-P-1Fz-_f7bKrY_TAl0",
@@ -351,14 +339,9 @@
                     <td><span class="badge ${isPrem ? 'badge-active' : 'badge-inactive'}">${isPrem ? 'Activo (Premium)' : 'Inactivo'}</span></td>
                     <td>
                         <div class="actions-cell">
-                            <select id="duracion-${data.id}">
-                                <option value="3">3 Días (Prueba)</option>
-                                <option value="30">30 Días (Mensual)</option>
-                                <option value="365">1 Año (Anual)</option>
-                            </select>
                             ${isPrem 
                                 ? `<button class="btn-desactivar" onclick="cambiarEstado('${data.id}', false)">Desactivar</button>`
-                                : `<button class="btn-activar" onclick="registrarYActivar('${data.id}')">Confirmar Pago y Activar</button>`
+                                : `<span style="color: var(--text-muted); font-size: 13px;">Sin acción</span>`
                             }
                         </div>
                     </td>
@@ -375,68 +358,6 @@
                 return nick.includes(texto) || email.includes(texto);
             });
             renderizarTabla(filtrados);
-        }
-
-        window.registrarYActivar = async function(userId) {
-            const selectElement = document.getElementById(`duracion-${userId}`);
-            const diasSeleccionados = parseInt(selectElement.value);
-            
-            // Asignar tipo de plan y monto correspondiente
-            let tipoPlan = "30 Días (Mensual)";
-            let montoPago = 1.00;
-
-            if (diasSeleccionados === 3) {
-                tipoPlan = "3 Días (Prueba)";
-                montoPago = 0.25;
-            } else if (diasSeleccionados === 365) {
-                tipoPlan = "1 Año (Anual)";
-                montoPago = 10.00;
-            }
-
-            if (!confirm(`¿Confirmas que YA recibiste el pago en PayPal para este usuario (${tipoPlan} - $${montoPago})?`)) return;
-
-            const obtenerFechaLocal = (diasAdicionales = 0) => {
-                const d = new Date();
-                d.setDate(d.getDate() + diasAdicionales);
-                const year = d.getFullYear();
-                const month = String(d.getMonth() + 1).padStart(2, '0');
-                const day = String(d.getDate()).padStart(2, '0');
-                const hours = String(d.getHours()).padStart(2, '0');
-                const minutes = String(d.getMinutes()).padStart(2, '0');
-                const seconds = String(d.getSeconds()).padStart(2, '0');
-                return `${year}-${month}-${day} ${hours}:${minutes}:${seconds}`;
-            };
-
-            const fechaFormateada = obtenerFechaLocal(0);
-            const fechaExpiracionFormateada = obtenerFechaLocal(diasSeleccionados);
-            const timestampActual = new Date().getTime();
-
-            try {
-                const userRef = doc(db, "users", userId);
-                await updateDoc(userRef, {
-                    isPremium: true,
-                    paymentReceived: true,
-                    amount: montoPago,
-                    billingCycle: tipoPlan,
-                    paymentDate: fechaFormateada,
-                    activatedAt: fechaFormateada,
-                    subscriptionExpiry: fechaExpiracionFormateada
-                });
-
-                await addDoc(collection(db, "users", userId, "payments"), {
-                    plan: tipoPlan,
-                    amount: montoPago,
-                    paymentDate: fechaFormateada,
-                    expiresAt: fechaExpiracionFormateada,
-                    timestamp: timestampActual
-                });
-
-                alert("¡Pago confirmado, registrado en el historial y cuenta activada!");
-                cargarSolicitudes(); 
-            } catch (error) {
-                console.error("Error al registrar pago: ", error);
-                alert("Hubo un error al actualizar los datos.");
-            }
         }
 
         window.verHistorial = async function(userId, nombreUsuario) {
@@ -457,7 +378,7 @@
 
                 let pagos = [];
                 querySnapshot.forEach(doc => pagos.push(doc.data()));
-                pagos.sort((a, b) => a.timestamp - b.timestamp); // Más antiguo al más nuevo
+                pagos.sort((a, b) => a.timestamp - b.timestamp);
 
                 pagos.forEach(pago => {
                     const tr = document.createElement("tr");
