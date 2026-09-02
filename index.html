@@ -5,6 +5,15 @@
     <meta name="viewport" content="width=device-width, initial-scale=1.0">
     <title>Panel de Administración - Suscripciones</title>
     <link href="https://fonts.googleapis.com/css2?family=Inter:wght@400;500;600;700&display=swap" rel="stylesheet">
+    
+    <!-- Librería de EmailJS -->
+    <script type="text/javascript" src="https://cdn.jsdelivr.net/npm/@emailjs/browser@3/dist/email.min.js"></script>
+    <script type="text/javascript">
+        (function() {
+            emailjs.init("TnZMRaiFdxKxY_ViM");
+        })();
+    </script>
+
     <style>
         :root {
             --primary: #4f46e5;
@@ -260,7 +269,8 @@
                     </tr>
                 </thead>
                 <tbody id="tabla-usuarios">
-                    </tbody>
+                    <!-- Dinámico -->
+                </tbody>
             </table>
         </div>
     </div>
@@ -282,7 +292,8 @@
                         </tr>
                     </thead>
                     <tbody id="tabla-historial">
-                        </tbody>
+                        <!-- Dinámico -->
+                    </tbody>
                 </table>
             </div>
         </div>
@@ -361,11 +372,12 @@
                 const pagoRecibido = data.paymentReceived === true || isPrem; 
                 const tr = document.createElement("tr");
                 const nombreUsuario = data.nickname || data.nombre || 'Sin nombre';
+                const correoUsuario = data.email || '';
                 const fechaLimpia = formatearFecha(data.paymentDate);
                 
                 tr.innerHTML = `
                     <td><span class="user-link" onclick="verHistorial('${data.id}', '${nombreUsuario}')">${nombreUsuario}</span></td>
-                    <td>${data.email || 'Sin correo'}</td>
+                    <td>${correoUsuario || 'Sin correo'}</td>
                     <td><b>${data.billingCycle || 'No pagado'}</b></td>
                     <td>${data.amount !== undefined ? '$' + data.amount : '$0.00'}</td>
                     <td>${fechaLimpia}</td>
@@ -374,7 +386,7 @@
                     <td>
                         <div class="actions-cell">
                             ${isPrem 
-                                ? `<button class="btn-desactivar" onclick="cambiarEstado('${data.id}', false)">Desactivar</button>`
+                                ? `<button class="btn-desactivar" onclick="cambiarEstado('${data.id}', '${correoUsuario}', '${nombreUsuario}')">Desactivar</button>`
                                 : `<span style="color: var(--text-muted); font-size: 13px;">Sin acción</span>`
                             }
                         </div>
@@ -452,8 +464,8 @@
             document.getElementById("modalHistorial").style.display = "none";
         }
 
-        window.cambiarEstado = async function(userId, activar) {
-            if (!confirm("¿Estás seguro de desactivar la cuenta de este usuario?")) return;
+        window.cambiarEstado = async function(userId, userEmail, userName) {
+            if (!confirm(`¿Estás seguro de desactivar la cuenta de ${userName}?`)) return;
 
             try {
                 const userRef = doc(db, "users", userId);
@@ -462,10 +474,24 @@
                     paymentReceived: false,
                     subscriptionExpiry: null
                 });
-                alert("¡Cuenta desactivada!");
+
+                if (userEmail && userEmail !== 'Sin correo') {
+                    const templateParams = {
+                        to_email: userEmail,
+                        to_name: userName,
+                        message: "Tu suscripción ha expirado o ha sido desactivada por el administrador."
+                    };
+
+                    await emailjs.send('service_4ys8soj', 'template_ypyoft1', templateParams);
+                    alert("¡Cuenta desactivada y correo de notificación enviado con éxito!");
+                } else {
+                    alert("¡Cuenta desactivada! (El usuario no tenía un correo registrado).");
+                }
+
                 cargarSolicitudes();
             } catch (error) {
-                console.error("Error al desactivar:", error);
+                console.error("Error al desactivar o enviar correo:", error);
+                alert("La cuenta se actualizó, pero hubo un problema al enviar el correo.");
             }
         }
 
