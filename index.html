@@ -7,31 +7,68 @@
     <link href="https://fonts.googleapis.com/css2?family=Inter:wght@400;500;600;700&display=swap" rel="stylesheet">
     <style>
         :root { --ios-blue: #007AFF; --ios-green: #34C759; --ios-red: #FF3B30; --ios-gray: #8E8E93; --ios-bg: #F2F2F7; }
-        body { font-family: -apple-system, BlinkMacSystemFont, "Inter", sans-serif; background-color: var(--ios-bg); margin: 0; padding: 25px; color: #000; }
+        * { box-sizing: border-box; -webkit-font-smoothing: antialiased; }
+        body { font-family: -apple-system, BlinkMacSystemFont, "Inter", sans-serif; background-color: var(--ios-bg); margin: 0; padding: 20px; color: #000; }
+        
         .container { max-width: 1200px; margin: 0 auto; }
-        header { display: flex; justify-content: space-between; align-items: center; margin-bottom: 20px; }
+        
+        /* Notificaciones iOS */
+        #notif-container { position: fixed; top: 20px; right: 20px; z-index: 9999; display: flex; flex-direction: column; gap: 10px; }
+        .ios-notif { 
+            width: 320px; background: rgba(255,255,255,0.95); backdrop-filter: blur(15px); padding: 15px; border-radius: 18px; 
+            box-shadow: 0 10px 30px rgba(0,0,0,0.1); border: 0.5px solid rgba(0,0,0,0.1);
+            display: flex; align-items: center; gap: 12px; animation: slideIn 0.5s ease-out;
+        }
+        .notif-dot { width: 12px; height: 12px; border-radius: 50%; flex-shrink: 0; }
+        @keyframes slideIn { from { transform: translateX(120%); } to { transform: translateX(0); } }
+
+        /* Header y Filtros */
+        header { margin-bottom: 20px; }
+        .header-top { display: flex; justify-content: space-between; align-items: center; margin-bottom: 15px; }
+        .filter-bar { display: flex; gap: 10px; margin-bottom: 10px; }
+        .filter-chip { 
+            padding: 8px 16px; border-radius: 20px; background: #E5E5EA; font-size: 13px; font-weight: 600; 
+            cursor: pointer; transition: 0.2s; border: none;
+        }
+        .filter-chip.active { background: var(--ios-blue); color: white; }
+
         .card { background: rgba(255,255,255,0.9); backdrop-filter: blur(15px); border-radius: 14px; border: 0.5px solid rgba(0,0,0,0.1); overflow-x: auto; box-shadow: 0 4px 15px rgba(0,0,0,0.05); }
         table { width: 100%; border-collapse: collapse; min-width: 900px; }
         th { text-align: left; padding: 12px 15px; font-size: 11px; color: var(--ios-gray); text-transform: uppercase; border-bottom: 1px solid #EEE; }
         td { padding: 14px 15px; border-bottom: 0.5px solid #F5F5F5; font-size: 14px; }
+        
         .user-link { color: var(--ios-blue); font-weight: 600; cursor: pointer; text-decoration: none; }
         .badge { padding: 4px 10px; border-radius: 6px; font-size: 10px; font-weight: 800; text-transform: uppercase; }
         .bg-green { background: rgba(52, 199, 89, 0.15); color: var(--ios-green); }
         .bg-red { background: rgba(255, 59, 48, 0.15); color: var(--ios-red); }
         .bg-gray { background: rgba(142, 142, 147, 0.15); color: var(--ios-gray); }
-        .btn { border: none; padding: 7px 14px; border-radius: 7px; font-weight: 700; cursor: pointer; font-size: 12px; }
+        
+        .btn { border: none; padding: 7px 14px; border-radius: 7px; font-weight: 700; cursor: pointer; font-size: 12px; transition: 0.2s; }
         .btn-green { background: var(--ios-green); color: white; }
         .btn-red { background: var(--ios-red); color: white; }
-        select { background: #EEE; border: none; padding: 6px; border-radius: 6px; font-size: 12px; }
-        .modal { display: none; position: fixed; top: 0; left: 0; width: 100%; height: 100%; background: rgba(0,0,0,0.4); z-index: 1000; justify-content: center; align-items: center; }
-        .modal-content { background: white; width: 90%; max-width: 600px; border-radius: 20px; padding: 20px; max-height: 80vh; overflow-y: auto; }
+        .btn:active { transform: scale(0.95); }
+
+        select { background: #EEE; border: none; padding: 6px; border-radius: 6px; font-size: 12px; outline: none; }
+        
+        .modal { display: none; position: fixed; top: 0; left: 0; width: 100%; height: 100%; background: rgba(0,0,0,0.4); z-index: 1000; justify-content: center; align-items: center; backdrop-filter: blur(4px); }
+        .modal-content { background: white; width: 90%; max-width: 700px; border-radius: 20px; padding: 25px; max-height: 80vh; overflow-y: auto; position: relative; }
     </style>
 </head>
 <body>
+
+    <div id="notif-container"></div>
+
     <div class="container">
         <header>
-            <h1>DPdefault Pro</h1>
-            <input type="text" id="buscador" placeholder="🔍 Buscar..." onkeyup="render()" style="padding:8px; border-radius:10px; border:none; width:250px;">
+            <div class="header-top">
+                <h1>DPdefault Pro</h1>
+                <input type="text" id="buscador" placeholder="🔍 Buscar usuario..." onkeyup="render()" style="padding:10px; border-radius:12px; border:none; width:300px; background: rgba(118, 118, 128, 0.12); outline:none;">
+            </div>
+            <div class="filter-bar">
+                <button class="filter-chip active" onclick="setFilter('todos', this)">Todos</button>
+                <button class="filter-chip" onclick="setFilter('pagos', this)">Pagos Nuevos</button>
+                <button class="filter-chip" onclick="setFilter('vencidos', this)">Vencidos / Apagar</button>
+            </div>
         </header>
 
         <div class="card">
@@ -54,12 +91,14 @@
 
     <div id="modalHistorial" class="modal">
         <div class="modal-content">
-            <h2 id="historialTitulo">Historial</h2>
+            <div style="display:flex; justify-content:space-between; align-items:center; margin-bottom:15px;">
+                <h2 id="historialTitulo" style="margin:0;">Historial</h2>
+                <button onclick="cerrarModal()" style="background:none; border:none; font-size:24px; cursor:pointer;">&times;</button>
+            </div>
             <table style="width:100%">
                 <thead><tr style="background:#F2F2F7"><th>Plan</th><th>Monto</th><th>Fecha</th><th>Expira</th></tr></thead>
                 <tbody id="historial-body"></tbody>
             </table>
-            <button onclick="cerrarModal()" style="margin-top:20px; width:100%; padding:10px; border-radius:10px; border:none; background:#EEE; font-weight:bold; cursor:pointer;">CERRAR</button>
         </div>
     </div>
 
@@ -75,20 +114,52 @@
         const app = initializeApp(firebaseConfig);
         const db = getFirestore(app);
         let usuarios = [];
+        let filtroActual = 'todos';
+        const notifiedIds = new Set();
 
         function formatFecha(data) {
             if (!data) return '-';
-            if (data.seconds) { // Convierte Timestamp técnico a legible
+            if (data.seconds) { 
                 const d = new Date(data.seconds * 1000);
                 return d.toISOString().replace('T', ' ').split('.')[0];
             }
             return (typeof data === 'string' && data !== 'EXPIRADO') ? data : '-';
         }
 
+        // 1. Monitor en Tiempo Real y Notificaciones
         onSnapshot(collection(db, "users"), (snap) => {
             usuarios = snap.docs.map(d => ({ id: d.id, ...d.data() }));
+            
+            snap.docChanges().forEach(change => {
+                const u = change.doc.data();
+                const id = change.doc.id;
+                const ahora = new Date();
+                const expDate = u.subscriptionExpiry && u.subscriptionExpiry !== '-' ? new Date(u.subscriptionExpiry.replace(' ', 'T')) : null;
+
+                // Notificación Verde: Pago nuevo sin activar
+                if (u.paymentReceived && !u.isPremium && !notifiedIds.has(id + '_p')) {
+                    lanzarNotif(`💰 Nuevo Pago de ${u.nickname}`, 'var(--ios-green)');
+                    notifiedIds.add(id + '_p');
+                }
+
+                // Notificación Roja: Expiración detectada
+                if (u.isPremium && expDate && ahora > expDate && !notifiedIds.has(id + '_e')) {
+                    lanzarNotif(`🚨 EXPIRADO: ${u.nickname}`, 'var(--ios-red)');
+                    notifiedIds.add(id + '_e');
+                }
+            });
             render();
         });
+
+        function lanzarNotif(titulo, color) {
+            const container = document.getElementById("notif-container");
+            const div = document.createElement("div");
+            div.className = "ios-notif";
+            div.innerHTML = `<div class="notif-dot" style="background:${color}"></div><div><b>${titulo}</b><br><small>Acción requerida ahora</small></div>`;
+            container.appendChild(div);
+            new Audio('https://assets.mixkit.co/active_storage/sfx/2869/2869-preview.mp3').play().catch(()=>{});
+            setTimeout(() => div.remove(), 7000);
+        }
 
         window.render = () => {
             const body = document.getElementById("tabla-body");
@@ -96,7 +167,20 @@
             const ahora = new Date();
             const busqueda = document.getElementById("buscador").value.toLowerCase();
 
-            usuarios.filter(u => (u.nickname || "").toLowerCase().includes(busqueda)).forEach(u => {
+            let filtrados = usuarios.filter(u => {
+                const matchBusqueda = (u.nickname || "").toLowerCase().includes(busqueda);
+                const expDate = u.subscriptionExpiry && u.subscriptionExpiry !== '-' ? new Date(u.subscriptionExpiry.replace(' ', 'T')) : null;
+                const vencido = expDate && ahora > expDate;
+
+                if (filtroActual === 'pagos') return matchBusqueda && u.paymentReceived && !u.isPremium;
+                if (filtroActual === 'vencidos') return matchBusqueda && u.isPremium && vencido;
+                return matchBusqueda;
+            });
+
+            // Ordenar: Primero los que necesitan atención (Pagos nuevos y Vencidos)
+            filtrados.sort((a, b) => (b.updatedAt?.seconds || 0) - (a.updatedAt?.seconds || 0));
+
+            filtrados.forEach(u => {
                 const expStr = formatFecha(u.subscriptionExpiry);
                 const expDate = expStr !== '-' ? new Date(expStr.replace(' ', 'T')) : null;
                 const vencido = expDate && ahora > expDate;
@@ -118,6 +202,13 @@
             });
         };
 
+        window.setFilter = (f, btn) => {
+            filtroActual = f;
+            document.querySelectorAll('.filter-chip').forEach(c => c.classList.remove('active'));
+            btn.classList.add('active');
+            render();
+        };
+
         window.activar = async (id) => {
             const dias = parseInt(document.getElementById(`sel-${id}`).value);
             const ahora = new Date(); const exp = new Date(); exp.setDate(ahora.getDate() + dias);
@@ -132,7 +223,7 @@
             await addDoc(collection(db, "users", id, "payments"), { plan: planNom, amount: precio, paymentDate: fmt(ahora), expiresAt: fmt(exp), timestamp: ahora.getTime() });
         };
 
-        window.apagar = async (id) => { if(confirm("¿Desactivar?")) await updateDoc(doc(db, "users", id), { isPremium: false, paymentReceived: false }); };
+        window.apagar = async (id) => { if(confirm("¿Desactivar?")) await updateDoc(doc(db, "users", id), { isPremium: false, paymentReceived: false, updatedAt: new Date() }); };
 
         window.verHistorial = async (id, nombre) => {
             document.getElementById("historialTitulo").innerText = "Historial: " + nombre;
