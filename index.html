@@ -1,62 +1,53 @@
 <!DOCTYPE html>
 <html lang="es">
 <head>
-    <meta charset="UTF-8">
-    <meta name="viewport" content="width=device-width, initial-scale=1.0">
-    <title>Panel de Administración - Suscripciones</title>
-    <link href="https://fonts.googleapis.com/css2?family=Inter:wght@400;500;600;700&display=swap" rel="stylesheet">
-    
-    <!-- Librería de EmailJS -->
-    <script type="text/javascript" src="https://cdn.jsdelivr.net/npm/@emailjs/browser@3/dist/email.min.js"></script>
-    <script type="text/javascript">
-        (function() {
-            emailjs.init("TnZMRaiFdxKxY_ViM");
-        })();
-    </script>
+<meta charset="UTF-8">
+<meta name="viewport" content="width=device-width, initial-scale=1.0">
+<title>Panel de Administración - Suscripciones</title>
+<link href="https://fonts.googleapis.com/css2?family=Inter:wght@400;500;600;700&display=swap" rel="stylesheet">
+<style>
+:root {
+--primary: #4f46e5;
+--bg-color: #f8fafc;
+--card-bg: #ffffff;
+--text-main: #1e293b;
+--text-muted: #64748b;
+--border-color: #e2e8f0;
+--danger: #ef4444;
+--success: #22c55e;
+}
 
-    <style>
-        :root {
-            --primary: #4f46e5;
-            --bg-color: #f8fafc;
-            --card-bg: #ffffff;
-            --text-main: #1e293b;
-            --text-muted: #64748b;
-            --border-color: #e2e8f0;
-            --danger: #ef4444;
-            --success: #22c55e;
-        }
+* { box-sizing: border-box; }
 
-        * { box-sizing: border-box; }
+body { 
+font-family: 'Inter', sans-serif; 
+background-color: var(--bg-color); 
+color: var(--text-main); 
+margin: 0; 
+padding: 20px 10px; 
+}
 
-        body { 
-            font-family: 'Inter', sans-serif; 
-            background-color: var(--bg-color); 
-            color: var(--text-main); 
-            margin: 0; 
-            padding: 20px 10px; 
-        }
+.container { 
+width: 100%;
+max-width: 100%; 
+margin: 0 auto; 
+padding: 0 10px;
+}
 
-        .container { 
-            width: 100%;
-            max-width: 100%; 
-            margin: 0 auto; 
-            padding: 0 10px;
-        }
+.header-panel { 
+display: flex; 
+justify-content: space-between; 
+align-items: center; 
+margin-bottom: 20px; 
+flex-wrap: wrap; 
+gap: 15px; 
+}
 
-        .header-panel { 
-            display: flex; 
-            justify-content: space-between; 
-            align-items: center; 
-            margin-bottom: 20px; 
-            flex-wrap: wrap; 
-            gap: 15px; 
-        }
-
-        h2 { 
-            margin: 0; 
-            font-size: clamp(1.2rem, 2vw, 1.5rem); 
-            font-weight: 700; 
-        }
+h2 { 
+margin: 0; 
+font-size: clamp(1.2rem, 2vw, 1.5rem); 
+font-weight: 700; 
+}
 
         .filters-wrapper {
             display: flex;
@@ -67,31 +58,33 @@
             max-width: 700px;
         }
 
-        .search-box { 
-            position: relative; 
+.search-box { 
+position: relative; 
+            width: 100%;
+            max-width: 350px; 
             flex: 1;
             min-width: 250px;
-        }
+}
 
-        .search-box input { 
-            width: 100%; 
-            padding: 10px 14px 10px 38px; 
-            border: 1px solid var(--border-color); 
-            border-radius: 8px; 
-            font-size: 14px; 
-            outline: none; 
-            background: #fff; 
-        }
+.search-box input { 
+width: 100%; 
+padding: 10px 14px 10px 38px; 
+border: 1px solid var(--border-color); 
+border-radius: 8px; 
+font-size: 14px; 
+outline: none; 
+background: #fff; 
+}
 
-        .search-box svg { 
-            position: absolute; 
-            left: 12px; 
-            top: 50%; 
-            transform: translateY(-50%); 
-            width: 16px; 
-            height: 16px; 
-            fill: var(--text-muted); 
-        }
+.search-box svg { 
+position: absolute; 
+left: 12px; 
+top: 50%; 
+transform: translateY(-50%); 
+width: 16px; 
+height: 16px; 
+fill: var(--text-muted); 
+}
 
         .filter-select {
             padding: 10px 14px;
@@ -104,136 +97,139 @@
             color: var(--text-main);
         }
 
-        .table-card { 
-            background: var(--card-bg); 
-            border-radius: 12px; 
-            box-shadow: 0 4px 6px -1px rgba(0,0,0,0.05); 
-            border: 1px solid var(--border-color); 
-            width: 100%;
-            overflow-x: auto; 
-            -webkit-overflow-scrolling: touch;
-        }
+.table-card { 
+background: var(--card-bg); 
+border-radius: 12px; 
+box-shadow: 0 4px 6px -1px rgba(0,0,0,0.05); 
+border: 1px solid var(--border-color); 
+width: 100%;
+overflow-x: auto; 
+-webkit-overflow-scrolling: touch;
+}
 
-        table { 
-            width: 100%; 
-            border-collapse: collapse; 
-            text-align: left; 
-        }
+table { 
+width: 100%; 
+border-collapse: collapse; 
+text-align: left; 
+}
 
-        th { 
-            background-color: #f1f5f9; 
-            color: var(--text-muted); 
-            font-weight: 600; 
-            font-size: 12px; 
-            text-transform: uppercase; 
-            padding: 16px 20px; 
-            border-bottom: 1px solid var(--border-color); 
-            white-space: nowrap;
-        }
+th { 
+background-color: #f1f5f9; 
+color: var(--text-muted); 
+font-weight: 600; 
+font-size: 12px; 
+text-transform: uppercase; 
+padding: 16px 20px; 
+border-bottom: 1px solid var(--border-color); 
+white-space: nowrap;
+}
 
-        td { 
-            padding: 16px 20px; 
-            border-bottom: 1px solid var(--border-color); 
-            font-size: 14px; 
-            vertical-align: middle; 
-        }
+td { 
+padding: 16px 20px; 
+border-bottom: 1px solid var(--border-color); 
+font-size: 14px; 
+vertical-align: middle; 
+}
 
-        tr:hover { background-color: #fcfdfe; }
+tr:hover { background-color: #fcfdfe; }
 
-        .user-link {
-            color: var(--primary);
-            font-weight: 700;
-            cursor: pointer;
-            text-decoration: underline;
-        }
-        .user-link:hover {
-            color: #3730a3;
-        }
+.user-link {
+color: var(--primary);
+font-weight: 700;
+cursor: pointer;
+text-decoration: underline;
+}
+.user-link:hover {
+color: #3730a3;
+}
 
-        .badge { 
-            display: inline-flex; 
-            align-items: center; 
-            padding: 4px 10px; 
-            border-radius: 9999px; 
-            font-size: 12px; 
-            font-weight: 500; 
-            white-space: nowrap;
-        }
-        .badge-active { background-color: #dcfce7; color: #15803d; }
-        .badge-inactive { background-color: #fee2e2; color: #b91c1c; }
-        .badge-received { background-color: #e0f2fe; color: #0369a1; }
+.badge { 
+display: inline-flex; 
+align-items: center; 
+padding: 4px 10px; 
+border-radius: 9999px; 
+font-size: 12px; 
+font-weight: 500; 
+white-space: nowrap;
+}
+.badge-active { background-color: #dcfce7; color: #15803d; }
+.badge-inactive { background-color: #fee2e2; color: #b91c1c; }
+.badge-received { background-color: #e0f2fe; color: #0369a1; }
 
-        button { 
-            padding: 8px 14px; 
-            border: none; 
-            border-radius: 6px; 
-            font-size: 13px; 
-            font-weight: 600; 
-            cursor: pointer; 
-            white-space: nowrap;
-        }
+button { 
+padding: 8px 14px; 
+border: none; 
+border-radius: 6px; 
+font-size: 13px; 
+font-weight: 600; 
+cursor: pointer; 
+white-space: nowrap;
+}
 
-        .btn-desactivar { background-color: var(--danger); color: white; }
+.btn-desactivar { background-color: var(--danger); color: white; }
 
-        .actions-cell { 
-            display: flex; 
-            align-items: center; 
-            gap: 6px; 
-            flex-wrap: wrap;
-        }
+.actions-cell { 
+display: flex; 
+align-items: center; 
+gap: 6px; 
+flex-wrap: wrap;
+}
 
-        .modal-overlay {
-            display: none;
-            position: fixed;
-            top: 0; left: 0; width: 100%; height: 100%;
-            background: rgba(0, 0, 0, 0.5);
-            justify-content: center;
-            align-items: center;
-            z-index: 1000;
-            padding: 15px;
-        }
-        .modal-content {
-            background: white;
-            border-radius: 12px;
-            width: 100%;
-            max-width: 750px;
-            max-height: 85vh;
-            overflow-y: auto;
-            box-shadow: 0 20px 25px -5px rgba(0, 0, 0, 0.1);
-            padding: 24px;
-        }
-        .modal-header {
-            display: flex;
-            justify-content: space-between;
-            align-items: center;
-            border-bottom: 1px solid var(--border-color);
-            padding-bottom: 12px;
-            margin-bottom: 16px;
-        }
-        .modal-header h3 { margin: 0; font-size: 1.2rem; }
-        .close-btn {
-            background: none;
-            border: none;
-            font-size: 1.5rem;
-            cursor: pointer;
-            color: var(--text-muted);
-        }
-        .history-table {
-            width: 100%;
-            border-collapse: collapse;
-            margin-top: 10px;
-        }
-        .history-table th, .history-table td {
-            font-size: 13px;
-            padding: 10px 14px;
-        }
-    </style>
+.modal-overlay {
+display: none;
+position: fixed;
+top: 0; left: 0; width: 100%; height: 100%;
+background: rgba(0, 0, 0, 0.5);
+justify-content: center;
+align-items: center;
+z-index: 1000;
+padding: 15px;
+}
+.modal-content {
+background: white;
+border-radius: 12px;
+width: 100%;
+max-width: 750px;
+max-height: 85vh;
+overflow-y: auto;
+box-shadow: 0 20px 25px -5px rgba(0, 0, 0, 0.1);
+padding: 24px;
+}
+.modal-header {
+display: flex;
+justify-content: space-between;
+align-items: center;
+border-bottom: 1px solid var(--border-color);
+padding-bottom: 12px;
+margin-bottom: 16px;
+}
+.modal-header h3 { margin: 0; font-size: 1.2rem; }
+.close-btn {
+background: none;
+border: none;
+font-size: 1.5rem;
+cursor: pointer;
+color: var(--text-muted);
+}
+.history-table {
+width: 100%;
+border-collapse: collapse;
+margin-top: 10px;
+}
+.history-table th, .history-table td {
+font-size: 13px;
+padding: 10px 14px;
+}
+</style>
 </head>
 <body>
 
-    <div class="container">
-        <div class="header-panel">
-            <h2>Gestión de Suscriptores</h2>
+<div class="container">
+<div class="header-panel">
+<h2>Gestión de Suscriptores</h2>
+            <div class="search-box">
+                <svg viewBox="0 0 24 24"><path d="M10 2a8 8 0 105.293 14.293l4.707 4.707 1.414-1.414-4.707-4.707A8 8 0 0010 2zm0 2a6 6 0 110 12 6 6 0 010-12z"/></svg>
+                <input type="text" id="buscador" placeholder="Buscar por usuario o correo..." onkeyup="filtrarUsuarios()">
             <div class="filters-wrapper">
                 <div class="search-box">
                     <svg viewBox="0 0 24 24"><path d="M10 2a8 8 0 105.293 14.293l4.707 4.707 1.414-1.414-4.707-4.707A8 8 0 0010 2zm0 2a6 6 0 110 12 6 6 0 010-12z"/></svg>
@@ -251,159 +247,158 @@
                     <option value="1 Año (Anual)">1 Año (Anual)</option>
                     <option value="No pagado">No pagado / Sin plan</option>
                 </select>
-            </div>
-        </div>
+</div>
+</div>
 
-        <div class="table-card">
-            <table>
-                <thead>
-                    <tr>
-                        <th>Usuario (Ver Historial)</th>
-                        <th>Correo</th>
-                        <th>Última Suscripción</th>
-                        <th>Monto</th>
-                        <th>Fecha del Último Pago</th>
-                        <th>Pago Recibido</th>
-                        <th>Estado Premium</th>
-                        <th>Acción</th>
-                    </tr>
-                </thead>
-                <tbody id="tabla-usuarios">
-                    <!-- Dinámico -->
-                </tbody>
-            </table>
-        </div>
-    </div>
+<div class="table-card">
+<table>
+<thead>
+<tr>
+<th>Usuario (Ver Historial)</th>
+<th>Correo</th>
+<th>Última Suscripción</th>
+<th>Monto</th>
+<th>Fecha del Último Pago</th>
+<th>Pago Recibido</th>
+<th>Estado Premium</th>
+<th>Acción</th>
+</tr>
+</thead>
+<tbody id="tabla-usuarios">
+</tbody>
+</table>
+</div>
+</div>
 
-    <div id="modalHistorial" class="modal-overlay">
-        <div class="modal-content">
-            <div class="modal-header">
-                <h3 id="modalTitulo">Historial de Pagos</h3>
-                <button class="close-btn" onclick="cerrarModal()">&times;</button>
-            </div>
-            <div style="overflow-x: auto;">
-                <table class="history-table">
-                    <thead>
-                        <tr style="background: #f1f5f9; color: var(--text-muted);">
-                            <th>Plan</th>
-                            <th>Monto</th>
-                            <th>Fecha de Activación</th>
-                            <th>Expira el</th>
-                        </tr>
-                    </thead>
-                    <tbody id="tabla-historial">
-                        <!-- Dinámico -->
-                    </tbody>
-                </table>
-            </div>
-        </div>
-    </div>
+<div id="modalHistorial" class="modal-overlay">
+<div class="modal-content">
+<div class="modal-header">
+<h3 id="modalTitulo">Historial de Pagos</h3>
+<button class="close-btn" onclick="cerrarModal()">&times;</button>
+</div>
+<div style="overflow-x: auto;">
+<table class="history-table">
+<thead>
+<tr style="background: #f1f5f9; color: var(--text-muted);">
+<th>Plan</th>
+<th>Monto</th>
+<th>Fecha de Activación</th>
+<th>Expira el</th>
+</tr>
+</thead>
+<tbody id="tabla-historial">
+</tbody>
+</table>
+</div>
+</div>
+</div>
 
-    <script type="module">
-        import { initializeApp } from "https://www.gstatic.com/firebasejs/10.8.0/firebase-app.js";
-        import { getFirestore, collection, getDocs, doc, updateDoc } from "https://www.gstatic.com/firebasejs/10.8.0/firebase-firestore.js";
+<script type="module">
+import { initializeApp } from "https://www.gstatic.com/firebasejs/10.8.0/firebase-app.js";
+import { getFirestore, collection, getDocs, doc, updateDoc } from "https://www.gstatic.com/firebasejs/10.8.0/firebase-firestore.js";
 
-        const firebaseConfig = {
-            apiKey: "AIzaSyAw98_ayavN4p2Lk-P-1Fz-_f7bKrY_TAl0",
-            authDomain: "dpdefault-48735.firebaseapp.com",
-            projectId: "dpdefault-48735",
-            storageBucket: "dpdefault-48735.firebasestorage.app",
-            messagingSenderId: "176010812894",
-            appId: "1:176010812894:web:aab3ff030cf228a0d3914f"
-        };
+const firebaseConfig = {
+apiKey: "AIzaSyAw98_ayavN4p2Lk-P-1Fz-_f7bKrY_TAl0",
+authDomain: "dpdefault-48735.firebaseapp.com",
+projectId: "dpdefault-48735",
+storageBucket: "dpdefault-48735.firebasestorage.app",
+messagingSenderId: "176010812894",
+appId: "1:176010812894:web:aab3ff030cf228a0d3914f"
+};
 
-        const app = initializeApp(firebaseConfig);
-        const db = getFirestore(app);
+const app = initializeApp(firebaseConfig);
+const db = getFirestore(app);
 
-        let listaUsuariosGlobal = [];
+let listaUsuariosGlobal = [];
 
-        function formatearFecha(fechaData) {
-            if (!fechaData) return 'Sin registro';
-            if (typeof fechaData === 'object' && fechaData.seconds) {
-                const dateObj = new Date(fechaData.seconds * 1000);
-                const year = dateObj.getFullYear();
-                const month = String(dateObj.getMonth() + 1).padStart(2, '0');
-                const day = String(dateObj.getDate()).padStart(2, '0');
-                const hours = String(dateObj.getHours()).padStart(2, '0');
-                const minutes = String(dateObj.getMinutes()).padStart(2, '0');
-                const seconds = String(dateObj.getSeconds()).padStart(2, '0');
-                return `${year}-${month}-${day} ${hours}:${minutes}:${seconds}`;
-            }
-            if (typeof fechaData === 'string') {
-                return fechaData;
-            }
-            return 'Sin registro';
-        }
+function formatearFecha(fechaData) {
+if (!fechaData) return 'Sin registro';
+if (typeof fechaData === 'object' && fechaData.seconds) {
+const dateObj = new Date(fechaData.seconds * 1000);
+const year = dateObj.getFullYear();
+const month = String(dateObj.getMonth() + 1).padStart(2, '0');
+const day = String(dateObj.getDate()).padStart(2, '0');
+const hours = String(dateObj.getHours()).padStart(2, '0');
+const minutes = String(dateObj.getMinutes()).padStart(2, '0');
+const seconds = String(dateObj.getSeconds()).padStart(2, '0');
+return `${year}-${month}-${day} ${hours}:${minutes}:${seconds}`;
+}
+if (typeof fechaData === 'string') {
+return fechaData;
+}
+return 'Sin registro';
+}
 
-        async function cargarSolicitudes() {
-            const tbody = document.getElementById("tabla-usuarios");
-            tbody.innerHTML = "<tr><td colspan='8' style='text-align:center;'>Cargando datos...</td></tr>";
+async function cargarSolicitudes() {
+const tbody = document.getElementById("tabla-usuarios");
+tbody.innerHTML = "<tr><td colspan='8' style='text-align:center;'>Cargando datos...</td></tr>";
 
-            try {
-                const querySnapshot = await getDocs(collection(db, "users"));
-                listaUsuariosGlobal = [];
+try {
+const querySnapshot = await getDocs(collection(db, "users"));
+listaUsuariosGlobal = [];
 
-                querySnapshot.forEach((documento) => {
-                    listaUsuariosGlobal.push({
-                        id: documento.id,
-                        ...documento.data()
-                    });
-                });
+querySnapshot.forEach((documento) => {
+listaUsuariosGlobal.push({
+id: documento.id,
+...documento.data()
+});
+});
 
-                renderizarTabla(listaUsuariosGlobal);
+renderizarTabla(listaUsuariosGlobal);
 
-            } catch (error) {
-                console.error("Error al cargar:", error);
-                tbody.innerHTML = "<tr><td colspan='8' style='text-align:center; color:red;'>Error al conectar con la base de datos.</td></tr>";
-            }
-        }
+} catch (error) {
+console.error("Error al cargar:", error);
+tbody.innerHTML = "<tr><td colspan='8' style='text-align:center; color:red;'>Error al conectar con la base de datos.</td></tr>";
+}
+}
 
-        window.renderizarTabla = function(usuarios) {
-            const tbody = document.getElementById("tabla-usuarios");
-            tbody.innerHTML = "";
+window.renderizarTabla = function(usuarios) {
+const tbody = document.getElementById("tabla-usuarios");
+tbody.innerHTML = "";
 
-            if (usuarios.length === 0) {
+if (usuarios.length === 0) {
+                tbody.innerHTML = "<tr><td colspan='8' style='text-align:center; color: #64748b;'>No se encontraron registros.</td></tr>";
                 tbody.innerHTML = "<tr><td colspan='8' style='text-align:center; color: #64748b;'>No se encontraron registros que coincidan con los filtros.</td></tr>";
-                return;
-            }
+return;
+}
 
-            usuarios.forEach((data) => {
-                const isPrem = data.isPremium === true;
-                const pagoRecibido = data.paymentReceived === true || isPrem; 
-                const tr = document.createElement("tr");
-                const nombreUsuario = data.nickname || data.nombre || 'Sin nombre';
-                const correoUsuario = data.email || '';
-                const fechaLimpia = formatearFecha(data.paymentDate);
-                
-                tr.innerHTML = `
-                    <td><span class="user-link" onclick="verHistorial('${data.id}', '${nombreUsuario}')">${nombreUsuario}</span></td>
-                    <td>${correoUsuario || 'Sin correo'}</td>
-                    <td><b>${data.billingCycle || 'No pagado'}</b></td>
-                    <td>${data.amount !== undefined ? '$' + data.amount : '$0.00'}</td>
-                    <td>${fechaLimpia}</td>
-                    <td><span class="badge ${pagoRecibido ? 'badge-received' : 'badge-inactive'}">${pagoRecibido ? 'Sí (Recibido)' : 'Pendiente'}</span></td>
-                    <td><span class="badge ${isPrem ? 'badge-active' : 'badge-inactive'}">${isPrem ? 'Activo (Premium)' : 'Inactivo'}</span></td>
-                    <td>
-                        <div class="actions-cell">
-                            ${isPrem 
-                                ? `<button class="btn-desactivar" onclick="cambiarEstado('${data.id}', '${correoUsuario}', '${nombreUsuario}')">Desactivar</button>`
-                                : `<span style="color: var(--text-muted); font-size: 13px;">Sin acción</span>`
-                            }
-                        </div>
-                    </td>
-                `;
-                tbody.appendChild(tr);
-            });
-        }
+usuarios.forEach((data) => {
+const isPrem = data.isPremium === true;
+const pagoRecibido = data.paymentReceived === true || isPrem; 
+const tr = document.createElement("tr");
+const nombreUsuario = data.nickname || data.nombre || 'Sin nombre';
+const fechaLimpia = formatearFecha(data.paymentDate);
 
-        window.filtrarUsuarios = function() {
-            const texto = document.getElementById("buscador").value.toLowerCase();
+tr.innerHTML = `
+                   <td><span class="user-link" onclick="verHistorial('${data.id}', '${nombreUsuario}')">${nombreUsuario}</span></td>
+                   <td>${data.email || 'Sin correo'}</td>
+                   <td><b>${data.billingCycle || 'No pagado'}</b></td>
+                   <td>${data.amount !== undefined ? '$' + data.amount : '$0.00'}</td>
+                   <td>${fechaLimpia}</td>
+                   <td><span class="badge ${pagoRecibido ? 'badge-received' : 'badge-inactive'}">${pagoRecibido ? 'Sí (Recibido)' : 'Pendiente'}</span></td>
+                   <td><span class="badge ${isPrem ? 'badge-active' : 'badge-inactive'}">${isPrem ? 'Activo (Premium)' : 'Inactivo'}</span></td>
+                   <td>
+                       <div class="actions-cell">
+                           ${isPrem 
+                               ? `<button class="btn-desactivar" onclick="cambiarEstado('${data.id}', false)">Desactivar</button>`
+                               : `<span style="color: var(--text-muted); font-size: 13px;">Sin acción</span>`
+                           }
+                       </div>
+                   </td>
+               `;
+tbody.appendChild(tr);
+});
+}
+
+window.filtrarUsuarios = function() {
+const texto = document.getElementById("buscador").value.toLowerCase();
             const estadoFiltro = document.getElementById("filtroEstado").value;
             const planFiltro = document.getElementById("filtroPlan").value;
 
-            const filtrados = listaUsuariosGlobal.filter(user => {
-                const nick = (user.nickname || user.nombre || '').toLowerCase();
-                const email = (user.email || '').toLowerCase();
+const filtrados = listaUsuariosGlobal.filter(user => {
+const nick = (user.nickname || user.nombre || '').toLowerCase();
+const email = (user.email || '').toLowerCase();
+                return nick.includes(texto) || email.includes(texto);
                 const cumpleTexto = nick.includes(texto) || email.includes(texto);
 
                 const isPrem = user.isPremium === true;
@@ -418,84 +413,70 @@
                 }
 
                 return cumpleTexto && cumpleEstado && cumplePlan;
-            });
+});
 
-            renderizarTabla(filtrados);
-        }
+renderizarTabla(filtrados);
+}
 
-        window.verHistorial = async function(userId, nombreUsuario) {
-            document.getElementById("modalTitulo").innerText = `Historial de Pagos - ${nombreUsuario}`;
-            const tbodyHistorial = document.getElementById("tabla-historial");
-            tbodyHistorial.innerHTML = "<tr><td colspan='4' style='text-align:center;'>Cargando historial...</td></tr>";
-            
-            document.getElementById("modalHistorial").style.display = "flex";
+window.verHistorial = async function(userId, nombreUsuario) {
+document.getElementById("modalTitulo").innerText = `Historial de Pagos - ${nombreUsuario}`;
+const tbodyHistorial = document.getElementById("tabla-historial");
+tbodyHistorial.innerHTML = "<tr><td colspan='4' style='text-align:center;'>Cargando historial...</td></tr>";
 
-            try {
-                const querySnapshot = await getDocs(collection(db, "users", userId, "payments"));
-                tbodyHistorial.innerHTML = "";
+document.getElementById("modalHistorial").style.display = "flex";
 
-                if (querySnapshot.empty) {
-                    tbodyHistorial.innerHTML = "<tr><td colspan='4' style='text-align:center; color: var(--text-muted);'>No hay pagos registrados en el historial todavía.</td></tr>";
-                    return;
-                }
+try {
+const querySnapshot = await getDocs(collection(db, "users", userId, "payments"));
+tbodyHistorial.innerHTML = "";
 
-                let pagos = [];
-                querySnapshot.forEach(doc => pagos.push(doc.data()));
-                pagos.sort((a, b) => a.timestamp - b.timestamp);
+if (querySnapshot.empty) {
+tbodyHistorial.innerHTML = "<tr><td colspan='4' style='text-align:center; color: var(--text-muted);'>No hay pagos registrados en el historial todavía.</td></tr>";
+return;
+}
 
-                pagos.forEach(pago => {
-                    const tr = document.createElement("tr");
-                    tr.innerHTML = `
-                        <td><b>${pago.plan}</b></td>
-                        <td>$${pago.amount}</td>
-                        <td>${formatearFecha(pago.paymentDate)}</td>
-                        <td>${formatearFecha(pago.expiresAt)}</td>
-                    `;
-                    tbodyHistorial.appendChild(tr);
-                });
+let pagos = [];
+querySnapshot.forEach(doc => pagos.push(doc.data()));
+pagos.sort((a, b) => a.timestamp - b.timestamp);
 
-            } catch (error) {
-                console.log("Subcolección no encontrada o sin permisos:", error);
-                tbodyHistorial.innerHTML = "<tr><td colspan='4' style='text-align:center; color: var(--text-muted);'>No hay pagos registrados en el historial todavía.</td></tr>";
-            }
-        }
+pagos.forEach(pago => {
+const tr = document.createElement("tr");
+tr.innerHTML = `
+                       <td><b>${pago.plan}</b></td>
+                       <td>$${pago.amount}</td>
+                       <td>${formatearFecha(pago.paymentDate)}</td>
+                       <td>${formatearFecha(pago.expiresAt)}</td>
+                   `;
+tbodyHistorial.appendChild(tr);
+});
 
-        window.cerrarModal = function() {
-            document.getElementById("modalHistorial").style.display = "none";
-        }
+} catch (error) {
+console.log("Subcolección no encontrada o sin permisos:", error);
+tbodyHistorial.innerHTML = "<tr><td colspan='4' style='text-align:center; color: var(--text-muted);'>No hay pagos registrados en el historial todavía.</td></tr>";
+}
+}
 
-        window.cambiarEstado = async function(userId, userEmail, userName) {
-            if (!confirm(`¿Estás seguro de desactivar la cuenta de ${userName}?`)) return;
+window.cerrarModal = function() {
+document.getElementById("modalHistorial").style.display = "none";
+}
 
-            try {
-                const userRef = doc(db, "users", userId);
-                await updateDoc(userRef, {
-                    isPremium: false,
-                    paymentReceived: false,
-                    subscriptionExpiry: null
-                });
+window.cambiarEstado = async function(userId, activar) {
+if (!confirm("¿Estás seguro de desactivar la cuenta de este usuario?")) return;
 
-                if (userEmail && userEmail !== 'Sin correo') {
-                    const templateParams = {
-                        to_email: userEmail,
-                        to_name: userName,
-                        message: "Tu suscripción ha expirado o ha sido desactivada por el administrador."
-                    };
+try {
+const userRef = doc(db, "users", userId);
+await updateDoc(userRef, {
+isPremium: false,
+paymentReceived: false,
+subscriptionExpiry: null
+});
+alert("¡Cuenta desactivada!");
+cargarSolicitudes();
+} catch (error) {
+console.error("Error al desactivar:", error);
+}
+}
 
-                    await emailjs.send('service_4ys8soj', 'template_ypyoft1', templateParams);
-                    alert("¡Cuenta desactivada y correo de notificación enviado con éxito!");
-                } else {
-                    alert("¡Cuenta desactivada! (El usuario no tenía un correo registrado).");
-                }
-
-                cargarSolicitudes();
-            } catch (error) {
-                console.error("Error al desactivar o enviar correo:", error);
-                alert("La cuenta se actualizó, pero hubo un problema al enviar el correo.");
-            }
-        }
-
-        cargarSolicitudes();
-    </script>
+cargarSolicitudes();
+</script>
 </body>
 </html>
