@@ -195,6 +195,7 @@
             white-space: nowrap;
         }
         .btn-desactivar { background-color: var(--danger); color: white; }
+        .btn-activar { background-color: var(--success); color: white; }
         .actions-cell { 
             display: flex; 
             align-items: center; 
@@ -335,19 +336,12 @@ const db = getFirestore(app);
 
 let listaUsuariosGlobal = [];
 
-// Redirección silenciosa automática hacia la app al completar el pago en PayPal
-function verificarRedireccionSilenciosa() {
-    const urlParams = new URLSearchParams(window.location.search);
-    const tx = urlParams.get('tx');
-    const st = urlParams.get('st');
-
-    if (tx || st === 'COMPLETED') {
-        const esquemaApp = `dpdefault://paypal-success?${window.location.search.substring(1)}`;
-        window.location.replace(esquemaApp);
-    }
-}
-
-verificarRedireccionSilenciosa();
+// NOTA: Como la página de GitHub (paypal-success.html) tiene una redirección estática 
+// a "dpdefault://paypal-success", cualquier intento de entrar directamente a esa página web 
+// causará bucles de redirección en el navegador si no procesa correctamente los parámetros o si intenta saltar sin fin.
+// Este script remueve por completo cualquier salto automático desde el index web hacia el protocolo de la app,
+// evitando que el navegador se quede atascado intentando redirigir infinitamente. 
+// La app móvil debe encargarse de escuchar cuando reciba el callback o procesar el resultado de forma nativa.
 
 function formatearFecha(fechaData) {
     if (!fechaData) return 'Sin registro';
@@ -452,7 +446,7 @@ window.renderizarTabla = function(usuarios) {
                 <div class="actions-cell">
                     ${isPrem
                         ? `<button class="btn-desactivar" onclick="cambiarEstado('${data.id}', false)">Desactivar</button>`
-                        : `<span style="color:var(--text-muted);font-size:13px;">Sin acción</span>`
+                        : `<button class="btn-activar" onclick="cambiarEstado('${data.id}', true)">Activar</button>`
                     }
                 </div>
             </td>`;
@@ -611,20 +605,40 @@ function actualizarContadorNotificaciones() {
 }
 
 window.cambiarEstado = async function(userId, activar) {
-    if (!confirm("¿Estás seguro de desactivar la cuenta de este usuario?")) return;
+    const mensaje = activar 
+        ? "¿Estás seguro de activar la cuenta de este usuario como Premium?" 
+        : "¿Estás seguro de desactivar la cuenta de este usuario?";
+        
+    if (!confirm(mensaje)) return;
 
     try {
         const userRef = doc(db, "users", userId);
-        await updateDoc(userRef, {
-            isPremium: false,
-            paymentReceived: false,
-            subscriptionExpiry: null
-        });
+        
+        if (activar) {
+            // Calcula una fecha por defecto de 30 días o activa los flags de pago y premium
+            const fechaActual = new Date();
+            const fechaExpiracion = new Date();
+            fechaExpiracion.setDate(fechaActual.getDate() + 30);
 
-        alert("¡Cuenta desactivada!");
+            await updateDoc(userRef, {
+                isPremium: true,
+                paymentReceived: true,
+                subscriptionExpiry: fechaExpiracion
+            });
+            alert("¡Cuenta activada exitosamente!");
+        } else {
+            await updateDoc(userRef, {
+                isPremium: false,
+                paymentReceived: false,
+                subscriptionExpiry: null
+            });
+            alert("¡Cuenta desactivada!");
+        }
+
         cargarSolicitudes();
     } catch (error) {
-        console.error("Error al desactivar:", error);
+        console.error("Error al cambiar estado:", error);
+        alert("Hubo un error al actualizar el estado de la cuenta.");
     }
 }
 
