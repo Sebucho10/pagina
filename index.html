@@ -301,7 +301,7 @@
 
     <script type="module">
         import { initializeApp } from "https://www.gstatic.com/firebasejs/10.8.0/firebase-app.js";
-        import { getFirestore, collection, getDocs, doc, updateDoc } from "https://www.gstatic.com/firebasejs/10.8.0/firebase-firestore.js";
+        import { getFirestore, collection, getDocs, doc, getDoc, updateDoc } from "https://www.gstatic.com/firebasejs/10.8.0/firebase-firestore.js";
 
         const firebaseConfig = {
             apiKey: "AIzaSyAw98_ayavN4p2Lk-P-1Fz-_f7bKrY_TAl0",
@@ -424,39 +424,60 @@
         }
 
         window.verHistorial = async function(userId, nombreUsuario) {
-            document.getElementById("modalTitulo").innerText = `Historial de Pagos - ${nombreUsuario}`;
+            document.getElementById("modalTitulo").innerText = `Historial / Último Pago - ${nombreUsuario}`;
             const tbodyHistorial = document.getElementById("tabla-historial");
-            tbodyHistorial.innerHTML = "<tr><td colspan='4' style='text-align:center;'>Cargando historial...</td></tr>";
+            tbodyHistorial.innerHTML = "<tr><td colspan='4' style='text-align:center;'>Cargando información...</td></tr>";
             
             document.getElementById("modalHistorial").style.display = "flex";
 
             try {
+                // 1. Intentar buscar en la subcolección "payments"
                 const querySnapshot = await getDocs(collection(db, "users", userId, "payments"));
                 tbodyHistorial.innerHTML = "";
 
-                if (querySnapshot.empty) {
-                    tbodyHistorial.innerHTML = "<tr><td colspan='4' style='text-align:center; color: var(--text-muted);'>No hay pagos registrados en el historial todavía.</td></tr>";
-                    return;
+                if (!querySnapshot.empty) {
+                    let pagos = [];
+                    querySnapshot.forEach(doc => pagos.push(doc.data()));
+                    pagos.sort((a, b) => (b.timestamp || 0) - (a.timestamp || 0)); // Ordenar del más reciente al más antiguo
+
+                    pagos.forEach(pago => {
+                        const tr = document.createElement("tr");
+                        tr.innerHTML = `
+                            <td><b>${pago.plan || pago.billingCycle || 'Suscripción'}</b></td>
+                            <td>$${pago.amount !== undefined ? pago.amount : '0.00'}</td>
+                            <td>${formatearFecha(pago.paymentDate || pago.timestamp)}</td>
+                            <td>${formatearFecha(pago.expiresAt || pago.subscriptionExpiry)}</td>
+                        `;
+                        tbodyHistorial.appendChild(tr);
+                    });
+                } else {
+                    // 2. Si no hay subcolección, buscar directamente los datos de pago en el documento principal del usuario
+                    const userDocRef = doc(db, "users", userId);
+                    const userDocSnap = await getDoc(userDocRef);
+
+                    if (userDocSnap.exists()) {
+                        const userData = userDocSnap.data();
+                        
+                        // Validar si tiene información de pago principal
+                        if (userData.billingCycle || userData.amount !== undefined || userData.paymentDate) {
+                            const tr = document.createElement("tr");
+                            tr.innerHTML = `
+                                <td><b>${userData.billingCycle || 'No pagado'}</b></td>
+                                <td>$${userData.amount !== undefined ? userData.amount : '0.00'}</td>
+                                <td>${formatearFecha(userData.paymentDate)}</td>
+                                <td>${formatearFecha(userData.subscriptionExpiry || userData.expiresAt)}</td>
+                            `;
+                            tbodyHistorial.appendChild(tr);
+                            return;
+                        }
+                    }
+
+                    tbodyHistorial.innerHTML = "<tr><td colspan='4' style='text-align:center; color: var(--text-muted);'>No hay pagos registrados para este usuario.</td></tr>";
                 }
 
-                let pagos = [];
-                querySnapshot.forEach(doc => pagos.push(doc.data()));
-                pagos.sort((a, b) => a.timestamp - b.timestamp);
-
-                pagos.forEach(pago => {
-                    const tr = document.createElement("tr");
-                    tr.innerHTML = `
-                        <td><b>${pago.plan}</b></td>
-                        <td>$${pago.amount}</td>
-                        <td>${formatearFecha(pago.paymentDate)}</td>
-                        <td>${formatearFecha(pago.expiresAt)}</td>
-                    `;
-                    tbodyHistorial.appendChild(tr);
-                });
-
             } catch (error) {
-                console.log("Subcolección no encontrada o sin permisos:", error);
-                tbodyHistorial.innerHTML = "<tr><td colspan='4' style='text-align:center; color: var(--text-muted);'>No hay pagos registrados en el historial todavía.</td></tr>";
+                console.error("Error al cargar historial:", error);
+                tbodyHistorial.innerHTML = "<tr><td colspan='4' style='text-align:center; color: red;'>Error al cargar los datos de pago.</td></tr>";
             }
         }
 
