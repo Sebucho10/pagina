@@ -132,6 +132,7 @@
         }
         .badge-active { background-color: #dcfce7; color: #15803d; }
         .badge-inactive { background-color: #fee2e2; color: #b91c1c; }
+        .badge-received { background-color: #e0f2fe; color: #0369a1; }
 
         select { 
             padding: 8px 12px; 
@@ -231,6 +232,7 @@
                         <th>Última Suscripción</th>
                         <th>Monto</th>
                         <th>Fecha del Último Pago</th>
+                        <th>Pago Recibido</th>
                         <th>Estado Premium</th>
                         <th>Acción / Confirmar Pago</th>
                     </tr>
@@ -302,7 +304,7 @@
 
         async function cargarSolicitudes() {
             const tbody = document.getElementById("tabla-usuarios");
-            tbody.innerHTML = "<tr><td colspan='7' style='text-align:center;'>Cargando datos...</td></tr>";
+            tbody.innerHTML = "<tr><td colspan='8' style='text-align:center;'>Cargando datos...</td></tr>";
 
             try {
                 const querySnapshot = await getDocs(collection(db, "users"));
@@ -319,7 +321,7 @@
 
             } catch (error) {
                 console.error("Error al cargar:", error);
-                tbody.innerHTML = "<tr><td colspan='7' style='text-align:center; color:red;'>Error al conectar con la base de datos.</td></tr>";
+                tbody.innerHTML = "<tr><td colspan='8' style='text-align:center; color:red;'>Error al conectar con la base de datos.</td></tr>";
             }
         }
 
@@ -328,12 +330,13 @@
             tbody.innerHTML = "";
 
             if (usuarios.length === 0) {
-                tbody.innerHTML = "<tr><td colspan='7' style='text-align:center; color: #64748b;'>No se encontraron registros.</td></tr>";
+                tbody.innerHTML = "<tr><td colspan='8' style='text-align:center; color: #64748b;'>No se encontraron registros.</td></tr>";
                 return;
             }
 
             usuarios.forEach((data) => {
                 const isPrem = data.isPremium === true;
+                const pagoRecibido = data.paymentReceived === true || isPrem; 
                 const tr = document.createElement("tr");
                 const nombreUsuario = data.nickname || data.nombre || 'Sin nombre';
                 const fechaLimpia = formatearFecha(data.paymentDate);
@@ -344,6 +347,7 @@
                     <td><b>${data.billingCycle || 'No pagado'}</b></td>
                     <td>${data.amount !== undefined ? '$' + data.amount : '$0.00'}</td>
                     <td>${fechaLimpia}</td>
+                    <td><span class="badge ${pagoRecibido ? 'badge-received' : 'badge-inactive'}">${pagoRecibido ? 'Sí (Recibido)' : 'Pendiente'}</span></td>
                     <td><span class="badge ${isPrem ? 'badge-active' : 'badge-inactive'}">${isPrem ? 'Activo (Premium)' : 'Inactivo'}</span></td>
                     <td>
                         <div class="actions-cell">
@@ -400,6 +404,7 @@
                 const userRef = doc(db, "users", userId);
                 await updateDoc(userRef, {
                     isPremium: true,
+                    paymentReceived: true,
                     amount: montoPago,
                     billingCycle: tipoPlan,
                     paymentDate: fechaFormateada,
@@ -441,7 +446,7 @@
 
                 let pagos = [];
                 querySnapshot.forEach(doc => pagos.push(doc.data()));
-                pagos.sort((a, b) => b.timestamp - a.timestamp);
+                pagos.sort((a, b) => a.timestamp - b.timestamp); // Más antiguo al más nuevo
 
                 pagos.forEach(pago => {
                     const tr = document.createElement("tr");
@@ -471,6 +476,7 @@
                 const userRef = doc(db, "users", userId);
                 await updateDoc(userRef, {
                     isPremium: false,
+                    paymentReceived: false,
                     subscriptionExpiry: null
                 });
                 alert("¡Cuenta desactivada!");
