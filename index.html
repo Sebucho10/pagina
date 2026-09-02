@@ -236,13 +236,11 @@
                     </tr>
                 </thead>
                 <tbody id="tabla-usuarios">
-                    <!-- Dinámico -->
-                </tbody>
+                    </tbody>
             </table>
         </div>
     </div>
 
-    <!-- Modal Historial de Pagos -->
     <div id="modalHistorial" class="modal-overlay">
         <div class="modal-content">
             <div class="modal-header">
@@ -260,8 +258,7 @@
                         </tr>
                     </thead>
                     <tbody id="tabla-historial">
-                        <!-- Carga dinámica -->
-                    </tbody>
+                        </tbody>
                 </table>
             </div>
         </div>
@@ -284,6 +281,24 @@
         const db = getFirestore(app);
 
         let listaUsuariosGlobal = [];
+
+        // Función inteligente para limpiar y mostrar cualquier formato de fecha de Firebase
+        function formatearFecha(fechaData) {
+            if (!fechaData) return 'Sin registro';
+            
+            // Si es un objeto Timestamp de Firebase (tiene seconds)
+            if (typeof fechaData === 'object' && fechaData.seconds) {
+                const dateObj = new Date(fechaData.seconds * 1000);
+                return dateObj.toISOString().replace('T', ' ').substring(0, 19);
+            }
+            
+            // Si ya es un texto guardado
+            if (typeof fechaData === 'string') {
+                return fechaData;
+            }
+
+            return 'Sin registro';
+        }
 
         async function cargarSolicitudes() {
             const tbody = document.getElementById("tabla-usuarios");
@@ -321,13 +336,14 @@
                 const isPrem = data.isPremium === true;
                 const tr = document.createElement("tr");
                 const nombreUsuario = data.nickname || data.nombre || 'Sin nombre';
+                const fechaLimpia = formatearFecha(data.paymentDate);
                 
                 tr.innerHTML = `
                     <td><span class="user-link" onclick="verHistorial('${data.id}', '${nombreUsuario}')">${nombreUsuario}</span></td>
                     <td>${data.email || 'Sin correo'}</td>
                     <td><b>${data.billingCycle || 'No pagado'}</b></td>
                     <td>${data.amount !== undefined ? '$' + data.amount : '$0.00'}</td>
-                    <td>${data.paymentDate || 'Sin registro'}</td>
+                    <td>${fechaLimpia}</td>
                     <td><span class="badge ${isPrem ? 'badge-active' : 'badge-inactive'}">${isPrem ? 'Activo (Premium)' : 'Inactivo'}</span></td>
                     <td>
                         <div class="actions-cell">
@@ -425,8 +441,8 @@
                     tr.innerHTML = `
                         <td><b>${pago.plan}</b></td>
                         <td>$${pago.amount}</td>
-                        <td>${pago.paymentDate}</td>
-                        <td>${pago.expiresAt}</td>
+                        <td>${formatearFecha(pago.paymentDate)}</td>
+                        <td>${formatearFecha(pago.expiresAt)}</td>
                     `;
                     tbodyHistorial.appendChild(tr);
                 });
