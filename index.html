@@ -352,6 +352,7 @@
                     <td>
                         <div class="actions-cell">
                             <select id="duracion-${data.id}">
+                                <option value="3">3 Días (Prueba)</option>
                                 <option value="30">30 Días (Mensual)</option>
                                 <option value="365">1 Año (Anual)</option>
                             </select>
@@ -379,10 +380,20 @@
         window.registrarYActivar = async function(userId) {
             const selectElement = document.getElementById(`duracion-${userId}`);
             const diasSeleccionados = parseInt(selectElement.value);
-            const tipoPlan = diasSeleccionados === 365 ? "1 Año (Anual)" : "30 Días (Mensual)";
-            const montoPago = 0.03;
+            
+            // Asignar tipo de plan y monto correspondiente
+            let tipoPlan = "30 Días (Mensual)";
+            let montoPago = 1.00;
 
-            if (!confirm(`¿Confirmas que YA recibiste el pago en PayPal para este usuario (${tipoPlan})?`)) return;
+            if (diasSeleccionados === 3) {
+                tipoPlan = "3 Días (Prueba)";
+                montoPago = 0.25;
+            } else if (diasSeleccionados === 365) {
+                tipoPlan = "1 Año (Anual)";
+                montoPago = 10.00;
+            }
+
+            if (!confirm(`¿Confirmas que YA recibiste el pago en PayPal para este usuario (${tipoPlan} - $${montoPago})?`)) return;
 
             const obtenerFechaLocal = (diasAdicionales = 0) => {
                 const d = new Date();
