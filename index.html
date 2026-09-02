@@ -111,7 +111,6 @@
 
         tr:hover { background-color: #fcfdfe; }
 
-        /* Estilo para el nombre clickeable */
         .user-link {
             color: var(--primary);
             font-weight: 700;
@@ -165,7 +164,6 @@
             flex-wrap: wrap;
         }
 
-        /* Estilos del Modal (Ventana Historial) */
         .modal-overlay {
             display: none;
             position: fixed;
@@ -271,7 +269,7 @@
 
     <script type="module">
         import { initializeApp } from "https://www.gstatic.com/firebasejs/10.8.0/firebase-app.js";
-        import { getFirestore, collection, getDocs, doc, updateDoc, addCollection, addDoc, query, where, orderBy } from "https://www.gstatic.com/firebasejs/10.8.0/firebase-firestore.js";
+        import { getFirestore, collection, getDocs, doc, updateDoc, addDoc } from "https://www.gstatic.com/firebasejs/10.8.0/firebase-firestore.js";
 
         const firebaseConfig = {
             apiKey: "AIzaSyAw98_ayavN4p2Lk-P-1Fz-_f7bKrY_TAl0",
@@ -374,7 +372,7 @@
             const fechaExpiracionFormateada = fechaExpiracion.toISOString().replace('T', ' ').substring(0, 19);
 
             try {
-                // 1. Actualizamos el documento principal del usuario (estado actual)
+                // 1. Actualizamos el documento principal del usuario
                 const userRef = doc(db, "users", userId);
                 await updateDoc(userRef, {
                     isPremium: true,
@@ -385,7 +383,7 @@
                     subscriptionExpiry: fechaExpiracion.toISOString()
                 });
 
-                // 2. Guardamos el pago en la subcolección de historial "payments" dentro del usuario
+                // 2. Guardamos el pago en la subcolección de historial "payments"
                 await addDoc(collection(db, "users", userId, "payments"), {
                     plan: tipoPlan,
                     amount: montoPago,
@@ -418,7 +416,6 @@
                     return;
                 }
 
-                // Ordenar por fecha de timestamp descendente (más reciente primero)
                 let pagos = [];
                 querySnapshot.forEach(doc => pagos.push(doc.data()));
                 pagos.sort((a, b) => b.timestamp - a.timestamp);
