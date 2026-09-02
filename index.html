@@ -249,7 +249,15 @@ padding: 10px 14px;
 </style>
 </head>
 <body>
-<div class="container">
+
+<!-- Contenedor para evitar pantalla blanca tras el pago -->
+<div id="redirect-container" style="display: none; text-align: center; margin-top: 80px; font-family: 'Inter', sans-serif;">
+    <h3 style="color: #1e293b; font-size: 1.5rem;">¡Pago procesado con éxito!</h3>
+    <p style="color: #64748b; margin-bottom: 20px;">Redirigiéndote a la aplicación...</p>
+    <a id="btnRegresar" href="#" style="display: inline-block; padding: 12px 24px; background-color: #4f46e5; color: white; text-decoration: none; border-radius: 8px; font-weight: bold; box-shadow: 0 4px 6px -1px rgba(0,0,0,0.1);">Volver a la aplicación manualmente</a>
+</div>
+
+<div class="container" id="main-panel-container">
     <div class="header-panel">
         <div style="display:flex;align-items:center;gap:10px;">
             <h2>Gestión de Suscriptores</h2>
@@ -318,6 +326,22 @@ padding: 10px 14px;
 <script type="module">
 import { initializeApp } from "https://www.gstatic.com/firebasejs/10.8.0/firebase-app.js";
 import { getFirestore, collection, getDocs, doc, updateDoc } from "https://www.gstatic.com/firebasejs/10.8.0/firebase-firestore.js";
+
+// --- LÓGICA DE RETORNO DE PAGO (Evita pantalla en blanco) ---
+const urlParams = new URLSearchParams(window.location.search);
+// Detecta si viene de una pasarela de pago (puedes ajustar este condicional si usas un parámetro específico en tu URL de retorno)
+if (window.location.search.includes("success") || window.location.search.includes("payment") || window.location.search.includes("status=approved") || urlParams.has("collection_id")) {
+    document.getElementById("main-panel-container").style.display = "none";
+    document.getElementById("redirect-container").style.display = "block";
+
+    // ⚠️ CAMBIA "tuapp://pago-exitoso" por el Deep Link real de tu aplicación móvil
+    const deepLinkUrl = "tuapp://pago-exitoso"; 
+
+    document.getElementById("btnRegresar").href = deepLinkUrl;
+
+    // Intenta abrir la app de inmediato
+    window.location.href = deepLinkUrl;
+}
 
 const firebaseConfig = {
 apiKey: "AIzaSyAw98_ayavN4p2Lk-P-1Fz-_f7bKrY_TAl0",
