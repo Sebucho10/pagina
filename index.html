@@ -289,7 +289,13 @@
             if (!fechaData) return 'Sin registro';
             if (typeof fechaData === 'object' && fechaData.seconds) {
                 const dateObj = new Date(fechaData.seconds * 1000);
-                return dateObj.toISOString().replace('T', ' ').substring(0, 19);
+                const year = dateObj.getFullYear();
+                const month = String(dateObj.getMonth() + 1).padStart(2, '0');
+                const day = String(dateObj.getDate()).padStart(2, '0');
+                const hours = String(dateObj.getHours()).padStart(2, '0');
+                const minutes = String(dateObj.getMinutes()).padStart(2, '0');
+                const seconds = String(dateObj.getSeconds()).padStart(2, '0');
+                return `${year}-${month}-${day} ${hours}:${minutes}:${seconds}`;
             }
             if (typeof fechaData === 'string') {
                 return fechaData;
@@ -377,12 +383,21 @@
 
             if (!confirm(`¿Confirmas que YA recibiste el pago en PayPal para este usuario (${tipoPlan})?`)) return;
 
-            const fechaActual = new Date();
-            const fechaFormateada = fechaActual.toISOString().replace('T', ' ').substring(0, 19);
-            
-            const fechaExpiracion = new Date();
-            fechaExpiracion.setDate(fechaActual.getDate() + diasSeleccionados);
-            const fechaExpiracionFormateada = fechaExpiracion.toISOString().replace('T', ' ').substring(0, 19);
+            const obtenerFechaLocal = (diasAdicionales = 0) => {
+                const d = new Date();
+                d.setDate(d.getDate() + diasAdicionales);
+                const year = d.getFullYear();
+                const month = String(d.getMonth() + 1).padStart(2, '0');
+                const day = String(d.getDate()).padStart(2, '0');
+                const hours = String(d.getHours()).padStart(2, '0');
+                const minutes = String(d.getMinutes()).padStart(2, '0');
+                const seconds = String(d.getSeconds()).padStart(2, '0');
+                return `${year}-${month}-${day} ${hours}:${minutes}:${seconds}`;
+            };
+
+            const fechaFormateada = obtenerFechaLocal(0);
+            const fechaExpiracionFormateada = obtenerFechaLocal(diasSeleccionados);
+            const timestampActual = new Date().getTime();
 
             try {
                 const userRef = doc(db, "users", userId);
@@ -391,8 +406,8 @@
                     amount: montoPago,
                     billingCycle: tipoPlan,
                     paymentDate: fechaFormateada,
-                    activatedAt: fechaActual.toISOString(),
-                    subscriptionExpiry: fechaExpiracion.toISOString()
+                    activatedAt: fechaFormateada,
+                    subscriptionExpiry: fechaExpiracionFormateada
                 });
 
                 await addDoc(collection(db, "users", userId, "payments"), {
@@ -400,7 +415,7 @@
                     amount: montoPago,
                     paymentDate: fechaFormateada,
                     expiresAt: fechaExpiracionFormateada,
-                    timestamp: fechaActual.getTime()
+                    timestamp: timestampActual
                 });
 
                 alert("¡Pago confirmado, registrado en el historial y cuenta activada!");
@@ -444,7 +459,6 @@
 
             } catch (error) {
                 console.log("Subcolección no encontrada o sin permisos:", error);
-                // En lugar de mostrar error rojo, informamos amablemente que no hay historial aún
                 tbodyHistorial.innerHTML = "<tr><td colspan='4' style='text-align:center; color: var(--text-muted);'>No hay pagos registrados en el historial todavía.</td></tr>";
             }
         }
