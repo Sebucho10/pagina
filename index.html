@@ -49,10 +49,19 @@
             font-weight: 700; 
         }
 
+        .filters-wrapper {
+            display: flex;
+            gap: 10px;
+            align-items: center;
+            flex-wrap: wrap;
+            width: 100%;
+            max-width: 700px;
+        }
+
         .search-box { 
             position: relative; 
-            width: 100%;
-            max-width: 350px; 
+            flex: 1;
+            min-width: 250px;
         }
 
         .search-box input { 
@@ -73,6 +82,17 @@
             width: 16px; 
             height: 16px; 
             fill: var(--text-muted); 
+        }
+
+        .filter-select {
+            padding: 10px 14px;
+            border: 1px solid var(--border-color);
+            border-radius: 8px;
+            background-color: #fff;
+            font-size: 14px;
+            outline: none;
+            cursor: pointer;
+            color: var(--text-main);
         }
 
         .table-card { 
@@ -205,9 +225,23 @@
     <div class="container">
         <div class="header-panel">
             <h2>Gestión de Suscriptores</h2>
-            <div class="search-box">
-                <svg viewBox="0 0 24 24"><path d="M10 2a8 8 0 105.293 14.293l4.707 4.707 1.414-1.414-4.707-4.707A8 8 0 0010 2zm0 2a6 6 0 110 12 6 6 0 010-12z"/></svg>
-                <input type="text" id="buscador" placeholder="Buscar por usuario o correo..." onkeyup="filtrarUsuarios()">
+            <div class="filters-wrapper">
+                <div class="search-box">
+                    <svg viewBox="0 0 24 24"><path d="M10 2a8 8 0 105.293 14.293l4.707 4.707 1.414-1.414-4.707-4.707A8 8 0 0010 2zm0 2a6 6 0 110 12 6 6 0 010-12z"/></svg>
+                    <input type="text" id="buscador" placeholder="Buscar por usuario o correo..." onkeyup="filtrarUsuarios()">
+                </div>
+                <select id="filtroEstado" class="filter-select" onchange="filtrarUsuarios()">
+                    <option value="todos">Todos los estados</option>
+                    <option value="activo">Activos (Premium)</option>
+                    <option value="inactivo">Inactivos</option>
+                </select>
+                <select id="filtroPlan" class="filter-select" onchange="filtrarUsuarios()">
+                    <option value="todos">Todos los planes</option>
+                    <option value="3 Días (Prueba)">3 Días (Prueba)</option>
+                    <option value="30 Días (Mensual)">30 Días (Mensual)</option>
+                    <option value="1 Año (Anual)">1 Año (Anual)</option>
+                    <option value="No pagado">No pagado / Sin plan</option>
+                </select>
             </div>
         </div>
 
@@ -318,7 +352,7 @@
             tbody.innerHTML = "";
 
             if (usuarios.length === 0) {
-                tbody.innerHTML = "<tr><td colspan='8' style='text-align:center; color: #64748b;'>No se encontraron registros.</td></tr>";
+                tbody.innerHTML = "<tr><td colspan='8' style='text-align:center; color: #64748b;'>No se encontraron registros que coincidan con los filtros.</td></tr>";
                 return;
             }
 
@@ -352,11 +386,28 @@
 
         window.filtrarUsuarios = function() {
             const texto = document.getElementById("buscador").value.toLowerCase();
+            const estadoFiltro = document.getElementById("filtroEstado").value;
+            const planFiltro = document.getElementById("filtroPlan").value;
+
             const filtrados = listaUsuariosGlobal.filter(user => {
                 const nick = (user.nickname || user.nombre || '').toLowerCase();
                 const email = (user.email || '').toLowerCase();
-                return nick.includes(texto) || email.includes(texto);
+                const cumpleTexto = nick.includes(texto) || email.includes(texto);
+
+                const isPrem = user.isPremium === true;
+                let cumpleEstado = true;
+                if (estadoFiltro === 'activo') cumpleEstado = isPrem;
+                if (estadoFiltro === 'inactivo') cumpleEstado = !isPrem;
+
+                let cumplePlan = true;
+                const planActual = user.billingCycle || 'No pagado';
+                if (planFiltro !== 'todos') {
+                    cumplePlan = planActual.includes(planFiltro);
+                }
+
+                return cumpleTexto && cumpleEstado && cumplePlan;
             });
+
             renderizarTabla(filtrados);
         }
 
