@@ -53,7 +53,7 @@
 
     <script type="module">
         import { initializeApp } from "https://www.gstatic.com/firebasejs/10.8.0/firebase-app.js";
-        import { getFirestore, doc, updateDate, setDoc, collection, serverTimestamp } from "https://www.gstatic.com/firebasejs/10.8.0/firebase-firestore.js";
+        import { getFirestore, doc, setDoc, collection, serverTimestamp } from "https://www.gstatic.com/firebasejs/10.8.0/firebase-firestore.js";
 
         const firebaseConfig = {
             apiKey: "AIzaSyAw98_ayavN4p2Lk-P-1Fz-_f7bKrY_TAl0",
@@ -72,7 +72,6 @@
             const txId = urlParams.get('tx') || urlParams.get('token') || 'DESCONOCIDO';
             const monto = urlParams.get('amt') || '1.00';
             
-            // Puedes ajustar esto según cómo identifiques al usuario logueado en tu app (por ejemplo, localStorage o Auth)
             const userId = localStorage.getItem('currentUserId') || sessionStorage.getItem('currentUserId');
 
             document.getElementById("mensajeEstado").innerText = "¡Pago exitoso!";
@@ -81,11 +80,9 @@
             try {
                 if (userId) {
                     const ahora = new Date();
-                    // Calculamos 30 días de expiración por defecto (puedes ajustarlo)
                     const expira = new Date();
                     expira.setDate(ahora.getDate() + 30);
 
-                    // Actualizamos el documento principal del usuario
                     const userRef = doc(db, "users", userId);
                     await setDoc(userRef, {
                         isPremium: true,
@@ -96,7 +93,6 @@
                         expiresAt: expira.toISOString()
                     }, { merge: true });
 
-                    // Guardamos también en su subcolección de pagos para el historial
                     const paymentRef = doc(collection(db, "users", userId, "payments"));
                     await setDoc(paymentRef, {
                         txId: txId,
@@ -108,15 +104,14 @@
                     });
                 }
 
-                // Esperamos 2 segundos para que el usuario vea el mensaje de éxito y redirigimos a tu app principal
                 setTimeout(() => {
-                    window.location.href = "index.html"; // Cambia "index.html" por la ruta de tu app principal si es distinta
+                    window.location.href = "index.html"; 
                 }, 2000);
 
             } catch (error) {
                 console.error("Error al registrar el pago en Firebase:", error);
                 document.getElementById("mensajeEstado").innerText = "Error al sincronizar";
-                document.getElementById("subMensaje").innerText = "El pago se realizó, pero hubo un problema al actualizar la app. Contacta al soporte.";
+                document.getElementById("subMensaje").innerText = "El pago se realizó, pero hubo un problema al actualizar la app.";
                 document.getElementById("loader").style.display = "none";
             }
         }
