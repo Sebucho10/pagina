@@ -236,11 +236,13 @@
                     </tr>
                 </thead>
                 <tbody id="tabla-usuarios">
-                    </tbody>
+                    <!-- Dinámico -->
+                </tbody>
             </table>
         </div>
     </div>
 
+    <!-- Modal Historial de Pagos -->
     <div id="modalHistorial" class="modal-overlay">
         <div class="modal-content">
             <div class="modal-header">
@@ -258,7 +260,8 @@
                         </tr>
                     </thead>
                     <tbody id="tabla-historial">
-                        </tbody>
+                        <!-- Carga dinámica -->
+                    </tbody>
                 </table>
             </div>
         </div>
@@ -282,21 +285,15 @@
 
         let listaUsuariosGlobal = [];
 
-        // Función inteligente para limpiar y mostrar cualquier formato de fecha de Firebase
         function formatearFecha(fechaData) {
             if (!fechaData) return 'Sin registro';
-            
-            // Si es un objeto Timestamp de Firebase (tiene seconds)
             if (typeof fechaData === 'object' && fechaData.seconds) {
                 const dateObj = new Date(fechaData.seconds * 1000);
                 return dateObj.toISOString().replace('T', ' ').substring(0, 19);
             }
-            
-            // Si ya es un texto guardado
             if (typeof fechaData === 'string') {
                 return fechaData;
             }
-
             return 'Sin registro';
         }
 
@@ -388,7 +385,6 @@
             const fechaExpiracionFormateada = fechaExpiracion.toISOString().replace('T', ' ').substring(0, 19);
 
             try {
-                // 1. Actualizamos el documento principal del usuario
                 const userRef = doc(db, "users", userId);
                 await updateDoc(userRef, {
                     isPremium: true,
@@ -399,7 +395,6 @@
                     subscriptionExpiry: fechaExpiracion.toISOString()
                 });
 
-                // 2. Guardamos el pago en la subcolección de historial "payments"
                 await addDoc(collection(db, "users", userId, "payments"), {
                     plan: tipoPlan,
                     amount: montoPago,
@@ -448,8 +443,9 @@
                 });
 
             } catch (error) {
-                console.error("Error al cargar historial:", error);
-                tbodyHistorial.innerHTML = "<tr><td colspan='4' style='text-align:center; color:red;'>Error al cargar el historial.</td></tr>";
+                console.log("Subcolección no encontrada o sin permisos:", error);
+                // En lugar de mostrar error rojo, informamos amablemente que no hay historial aún
+                tbodyHistorial.innerHTML = "<tr><td colspan='4' style='text-align:center; color: var(--text-muted);'>No hay pagos registrados en el historial todavía.</td></tr>";
             }
         }
 
