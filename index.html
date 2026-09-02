@@ -17,11 +17,8 @@
             --success: #22c55e;
         }
 
-        * {
-            box-sizing: border-box;
-        }
+        * { box-sizing: border-box; }
 
-        /* Eliminamos los márgenes laterales grandes para ocupar todo el ancho */
         body { 
             font-family: 'Inter', sans-serif; 
             background-color: var(--bg-color); 
@@ -30,7 +27,6 @@
             padding: 20px 10px; 
         }
 
-        /* Contenedor expandido al 100% */
         .container { 
             width: 100%;
             max-width: 100%; 
@@ -79,7 +75,6 @@
             fill: var(--text-muted); 
         }
 
-        /* Tarjeta de tabla estirada a lo ancho total */
         .table-card { 
             background: var(--card-bg); 
             border-radius: 12px; 
@@ -114,8 +109,17 @@
             vertical-align: middle; 
         }
 
-        tr:hover { 
-            background-color: #fcfdfe; 
+        tr:hover { background-color: #fcfdfe; }
+
+        /* Estilo para el nombre clickeable */
+        .user-link {
+            color: var(--primary);
+            font-weight: 700;
+            cursor: pointer;
+            text-decoration: underline;
+        }
+        .user-link:hover {
+            color: #3730a3;
         }
 
         .badge { 
@@ -160,6 +164,53 @@
             gap: 6px; 
             flex-wrap: wrap;
         }
+
+        /* Estilos del Modal (Ventana Historial) */
+        .modal-overlay {
+            display: none;
+            position: fixed;
+            top: 0; left: 0; width: 100%; height: 100%;
+            background: rgba(0, 0, 0, 0.5);
+            justify-content: center;
+            align-items: center;
+            z-index: 1000;
+            padding: 15px;
+        }
+        .modal-content {
+            background: white;
+            border-radius: 12px;
+            width: 100%;
+            max-width: 750px;
+            max-height: 85vh;
+            overflow-y: auto;
+            box-shadow: 0 20px 25px -5px rgba(0, 0, 0, 0.1);
+            padding: 24px;
+        }
+        .modal-header {
+            display: flex;
+            justify-content: space-between;
+            align-items: center;
+            border-bottom: 1px solid var(--border-color);
+            padding-bottom: 12px;
+            margin-bottom: 16px;
+        }
+        .modal-header h3 { margin: 0; font-size: 1.2rem; }
+        .close-btn {
+            background: none;
+            border: none;
+            font-size: 1.5rem;
+            cursor: pointer;
+            color: var(--text-muted);
+        }
+        .history-table {
+            width: 100%;
+            border-collapse: collapse;
+            margin-top: 10px;
+        }
+        .history-table th, .history-table td {
+            font-size: 13px;
+            padding: 10px 14px;
+        }
     </style>
 </head>
 <body>
@@ -177,11 +228,11 @@
             <table>
                 <thead>
                     <tr>
-                        <th>Usuario</th>
+                        <th>Usuario (Ver Historial)</th>
                         <th>Correo</th>
-                        <th>Suscripción</th>
+                        <th>Última Suscripción</th>
                         <th>Monto</th>
-                        <th>Fecha de Pago</th>
+                        <th>Fecha del Último Pago</th>
                         <th>Estado Premium</th>
                         <th>Acción / Confirmar Pago</th>
                     </tr>
@@ -193,9 +244,34 @@
         </div>
     </div>
 
+    <!-- Modal Historial de Pagos -->
+    <div id="modalHistorial" class="modal-overlay">
+        <div class="modal-content">
+            <div class="modal-header">
+                <h3 id="modalTitulo">Historial de Pagos</h3>
+                <button class="close-btn" onclick="cerrarModal()">&times;</button>
+            </div>
+            <div style="overflow-x: auto;">
+                <table class="history-table">
+                    <thead>
+                        <tr style="background: #f1f5f9; color: var(--text-muted);">
+                            <th>Plan</th>
+                            <th>Monto</th>
+                            <th>Fecha de Activación</th>
+                            <th>Expira el</th>
+                        </tr>
+                    </thead>
+                    <tbody id="tabla-historial">
+                        <!-- Carga dinámica -->
+                    </tbody>
+                </table>
+            </div>
+        </div>
+    </div>
+
     <script type="module">
         import { initializeApp } from "https://www.gstatic.com/firebasejs/10.8.0/firebase-app.js";
-        import { getFirestore, collection, getDocs, doc, updateDoc } from "https://www.gstatic.com/firebasejs/10.8.0/firebase-firestore.js";
+        import { getFirestore, collection, getDocs, doc, updateDoc, addCollection, addDoc, query, where, orderBy } from "https://www.gstatic.com/firebasejs/10.8.0/firebase-firestore.js";
 
         const firebaseConfig = {
             apiKey: "AIzaSyAw98_ayavN4p2Lk-P-1Fz-_f7bKrY_TAl0",
@@ -246,9 +322,10 @@
             usuarios.forEach((data) => {
                 const isPrem = data.isPremium === true;
                 const tr = document.createElement("tr");
+                const nombreUsuario = data.nickname || data.nombre || 'Sin nombre';
                 
                 tr.innerHTML = `
-                    <td><strong>${data.nickname || data.nombre || 'Sin nombre'}</strong></td>
+                    <td><span class="user-link" onclick="verHistorial('${data.id}', '${nombreUsuario}')">${nombreUsuario}</span></td>
                     <td>${data.email || 'Sin correo'}</td>
                     <td><b>${data.billingCycle || 'No pagado'}</b></td>
                     <td>${data.amount !== undefined ? '$' + data.amount : '$0.00'}</td>
@@ -284,18 +361,20 @@
         window.registrarYActivar = async function(userId) {
             const selectElement = document.getElementById(`duracion-${userId}`);
             const diasSeleccionados = parseInt(selectElement.value);
-            const tipoPlan = diasSeleccionados === 365 ? "Anual" : "Mensual";
+            const tipoPlan = diasSeleccionados === 365 ? "1 Año (Anual)" : "30 Días (Mensual)";
             const montoPago = 0.03;
 
-            if (!confirm(`¿Confirmas que YA recibiste el dinero en PayPal para este usuario (${tipoPlan})?`)) return;
+            if (!confirm(`¿Confirmas que YA recibiste el pago en PayPal para este usuario (${tipoPlan})?`)) return;
 
             const fechaActual = new Date();
             const fechaFormateada = fechaActual.toISOString().replace('T', ' ').substring(0, 19);
             
             const fechaExpiracion = new Date();
             fechaExpiracion.setDate(fechaActual.getDate() + diasSeleccionados);
+            const fechaExpiracionFormateada = fechaExpiracion.toISOString().replace('T', ' ').substring(0, 19);
 
             try {
+                // 1. Actualizamos el documento principal del usuario (estado actual)
                 const userRef = doc(db, "users", userId);
                 await updateDoc(userRef, {
                     isPremium: true,
@@ -306,12 +385,63 @@
                     subscriptionExpiry: fechaExpiracion.toISOString()
                 });
 
-                alert("¡Pago confirmado y cuenta activada con éxito!");
+                // 2. Guardamos el pago en la subcolección de historial "payments" dentro del usuario
+                await addDoc(collection(db, "users", userId, "payments"), {
+                    plan: tipoPlan,
+                    amount: montoPago,
+                    paymentDate: fechaFormateada,
+                    expiresAt: fechaExpiracionFormateada,
+                    timestamp: fechaActual.getTime()
+                });
+
+                alert("¡Pago confirmado, registrado en el historial y cuenta activada!");
                 cargarSolicitudes(); 
             } catch (error) {
                 console.error("Error al registrar pago: ", error);
                 alert("Hubo un error al actualizar los datos.");
             }
+        }
+
+        window.verHistorial = async function(userId, nombreUsuario) {
+            document.getElementById("modalTitulo").innerText = `Historial de Pagos - ${nombreUsuario}`;
+            const tbodyHistorial = document.getElementById("tabla-historial");
+            tbodyHistorial.innerHTML = "<tr><td colspan='4' style='text-align:center;'>Cargando historial...</td></tr>";
+            
+            document.getElementById("modalHistorial").style.display = "flex";
+
+            try {
+                const querySnapshot = await getDocs(collection(db, "users", userId, "payments"));
+                tbodyHistorial.innerHTML = "";
+
+                if (querySnapshot.empty) {
+                    tbodyHistorial.innerHTML = "<tr><td colspan='4' style='text-align:center; color: var(--text-muted);'>No hay pagos registrados en el historial todavía.</td></tr>";
+                    return;
+                }
+
+                // Ordenar por fecha de timestamp descendente (más reciente primero)
+                let pagos = [];
+                querySnapshot.forEach(doc => pagos.push(doc.data()));
+                pagos.sort((a, b) => b.timestamp - a.timestamp);
+
+                pagos.forEach(pago => {
+                    const tr = document.createElement("tr");
+                    tr.innerHTML = `
+                        <td><b>${pago.plan}</b></td>
+                        <td>$${pago.amount}</td>
+                        <td>${pago.paymentDate}</td>
+                        <td>${pago.expiresAt}</td>
+                    `;
+                    tbodyHistorial.appendChild(tr);
+                });
+
+            } catch (error) {
+                console.error("Error al cargar historial:", error);
+                tbodyHistorial.innerHTML = "<tr><td colspan='4' style='text-align:center; color:red;'>Error al cargar el historial.</td></tr>";
+            }
+        }
+
+        window.cerrarModal = function() {
+            document.getElementById("modalHistorial").style.display = "none";
         }
 
         window.cambiarEstado = async function(userId, activar) {
