@@ -52,28 +52,10 @@
             gap: 15px; 
         }
 
-        .title-wrapper {
-            display: flex;
-            align-items: center;
-            gap: 10px;
-        }
-
         h2 { 
             margin: 0; 
             font-size: clamp(1.2rem, 2vw, 1.5rem); 
             font-weight: 700; 
-        }
-
-        .notification-badge {
-            background-color: var(--danger);
-            color: white;
-            font-size: 12px;
-            font-weight: 700;
-            padding: 2px 8px;
-            border-radius: 9999px;
-            display: inline-flex;
-            align-items: center;
-            justify-content: center;
         }
 
         .filters-wrapper {
@@ -178,8 +160,7 @@
             white-space: nowrap;
         }
         .badge-active { background-color: #dcfce7; color: #15803d; }
-        .badge-expired { background-color: #fee2e2; color: #b91c1c; font-weight: 600; }
-        .badge-inactive { background-color: #f1f5f9; color: var(--text-muted); }
+        .badge-inactive { background-color: #fee2e2; color: #b91c1c; }
         .badge-received { background-color: #e0f2fe; color: #0369a1; }
 
         button { 
@@ -252,10 +233,7 @@
 
     <div class="container">
         <div class="header-panel">
-            <div class="title-wrapper">
-                <h2>Gestión de Suscriptores</h2>
-                <span id="contadorNotificaciones" class="notification-badge" style="display: none;">0</span>
-            </div>
+            <h2>Gestión de Suscriptores</h2>
             <div class="filters-wrapper">
                 <div class="search-box">
                     <svg viewBox="0 0 24 24"><path d="M10 2a8 8 0 105.293 14.293l4.707 4.707 1.414-1.414-4.707-4.707A8 8 0 0010 2zm0 2a6 6 0 110 12 6 6 0 010-12z"/></svg>
@@ -264,7 +242,6 @@
                 <select id="filtroEstado" class="filter-select" onchange="filtrarUsuarios()">
                     <option value="todos">Todos los estados</option>
                     <option value="activo">Activos (Premium)</option>
-                    <option value="vencido">Vencidos / Requieren atención</option>
                     <option value="inactivo">Inactivos</option>
                 </select>
                 <select id="filtroPlan" class="filter-select" onchange="filtrarUsuarios()">
@@ -301,7 +278,7 @@
     <div id="modalHistorial" class="modal-overlay">
         <div class="modal-content">
             <div class="modal-header">
-                <h3 id="modalTitulo">Historial / Último Pago</h3>
+                <h3 id="modalTitulo">Historial de Pagos</h3>
                 <button class="close-btn" onclick="cerrarModal()">&times;</button>
             </div>
             <div style="overflow-x: auto;">
@@ -324,7 +301,7 @@
 
     <script type="module">
         import { initializeApp } from "https://www.gstatic.com/firebasejs/10.8.0/firebase-app.js";
-        import { getFirestore, collection, getDocs, doc, getDoc, updateDoc } from "https://www.gstatic.com/firebasejs/10.8.0/firebase-firestore.js";
+        import { getFirestore, collection, getDocs, doc, updateDoc } from "https://www.gstatic.com/firebasejs/10.8.0/firebase-firestore.js";
 
         const firebaseConfig = {
             apiKey: "AIzaSyAw98_ayavN4p2Lk-P-1Fz-_f7bKrY_TAl0",
@@ -358,18 +335,6 @@
             return 'Sin registro';
         }
 
-        function obtenerFechaObjeto(fechaData) {
-            if (!fechaData) return null;
-            if (typeof fechaData === 'object' && fechaData.seconds) {
-                return new Date(fechaData.seconds * 1000);
-            }
-            if (typeof fechaData === 'string') {
-                const d = new Date(fechaData);
-                return isNaN(d.getTime()) ? null : d;
-            }
-            return null;
-        }
-
         async function cargarSolicitudes() {
             const tbody = document.getElementById("tabla-usuarios");
             tbody.innerHTML = "<tr><td colspan='8' style='text-align:center;'>Cargando datos...</td></tr>";
@@ -378,59 +343,18 @@
                 const querySnapshot = await getDocs(collection(db, "users"));
                 listaUsuariosGlobal = [];
 
-                for (const documento of querySnapshot.docs) {
-                    const data = documento.data();
-                    let fechaExpiracion = data.expiresAt || data.subscriptionExpiry || data.fechaExpiracion || data.vencimiento || data.expires_at;
-                    
-                    // Si no está en el doc principal, buscamos en su subcolección payments el último pago
-                    if (!fechaExpiracion) {
-                        try {
-                            const paymentsSnap = await getDocs(collection(db, "users", documento.id, "payments"));
-                            if (!paymentsSnap.empty) {
-                                let pagos = [];
-                                paymentsSnap.forEach(p => pagos.push(p.data()));
-                                pagos.sort((a, b) => (b.timestamp || 0) - (a.timestamp || 0));
-                                const ultimoPago = pagos[0];
-                                fechaExpiracion = ultimoPago.expiresAt || ultimoPago.subscriptionExpiry || ultimoPago.fechaExpiracion || ultimoPago.vencimiento || ultimoPago.expires_at;
-                            }
-                        } catch(e) {}
-                    }
-
+                querySnapshot.forEach((documento) => {
                     listaUsuariosGlobal.push({
                         id: documento.id,
-                        ...data,
-                        _fechaExpiracionParsed: obtenerFechaObjeto(fechaExpiracion)
+                        ...documento.data()
                     });
-                }
+                });
 
                 renderizarTabla(listaUsuariosGlobal);
-                actualizarContadorNotificaciones();
 
             } catch (error) {
                 console.error("Error al cargar:", error);
                 tbody.innerHTML = "<tr><td colspan='8' style='text-align:center; color:red;'>Error al conectar con la base de datos.</td></tr>";
-            }
-        }
-
-        function actualizarContadorNotificaciones() {
-            const ahora = new Date();
-            let vencidosCount = 0;
-
-            listaUsuariosGlobal.forEach(user => {
-                const isPrem = user.isPremium === true;
-                const expDate = user._fechaExpiracionParsed;
-                // Consideramos que requiere atención si es premium pero su fecha ya pasó
-                if (isPrem && expDate && expDate < ahora) {
-                    vencidosCount++;
-                }
-            });
-
-            const badgeNotif = document.getElementById("contadorNotificaciones");
-            if (vencidosCount > 0) {
-                badgeNotif.innerText = vencidosCount;
-                badgeNotif.style.display = "inline-flex";
-            } else {
-                badgeNotif.style.display = "none";
             }
         }
 
@@ -443,8 +367,6 @@
                 return;
             }
 
-            const ahora = new Date();
-
             usuarios.forEach((data) => {
                 const isPrem = data.isPremium === true;
                 const pagoRecibido = data.paymentReceived === true || isPrem; 
@@ -452,18 +374,6 @@
                 const nombreUsuario = data.nickname || data.nombre || 'Sin nombre';
                 const correoUsuario = data.email || '';
                 const fechaLimpia = formatearFecha(data.paymentDate);
-
-                const expDate = data._fechaExpiracionParsed;
-                const estaVencido = isPrem && expDate && expDate < ahora;
-                
-                let badgeEstadoHTML = '';
-                if (estaVencido) {
-                    badgeEstadoHTML = `<span class="badge badge-expired">Vencido / Expirado</span>`;
-                } else if (isPrem) {
-                    badgeEstadoHTML = `<span class="badge badge-active">Activo (Premium)</span>`;
-                } else {
-                    badgeEstadoHTML = `<span class="badge badge-inactive">Inactivo</span>`;
-                }
                 
                 tr.innerHTML = `
                     <td><span class="user-link" onclick="verHistorial('${data.id}', '${nombreUsuario}')">${nombreUsuario}</span></td>
@@ -472,7 +382,7 @@
                     <td>${data.amount !== undefined ? '$' + data.amount : '$0.00'}</td>
                     <td>${fechaLimpia}</td>
                     <td><span class="badge ${pagoRecibido ? 'badge-received' : 'badge-inactive'}">${pagoRecibido ? 'Sí (Recibido)' : 'Pendiente'}</span></td>
-                    <td>${badgeEstadoHTML}</td>
+                    <td><span class="badge ${isPrem ? 'badge-active' : 'badge-inactive'}">${isPrem ? 'Activo (Premium)' : 'Inactivo'}</span></td>
                     <td>
                         <div class="actions-cell">
                             ${isPrem 
@@ -490,7 +400,6 @@
             const texto = document.getElementById("buscador").value.toLowerCase();
             const estadoFiltro = document.getElementById("filtroEstado").value;
             const planFiltro = document.getElementById("filtroPlan").value;
-            const ahora = new Date();
 
             const filtrados = listaUsuariosGlobal.filter(user => {
                 const nick = (user.nickname || user.nombre || '').toLowerCase();
@@ -498,12 +407,8 @@
                 const cumpleTexto = nick.includes(texto) || email.includes(texto);
 
                 const isPrem = user.isPremium === true;
-                const expDate = user._fechaExpiracionParsed;
-                const estaVencido = isPrem && expDate && expDate < ahora;
-
                 let cumpleEstado = true;
-                if (estadoFiltro === 'activo') cumpleEstado = isPrem && !estaVencido;
-                if (estadoFiltro === 'vencido') cumpleEstado = estaVencido;
+                if (estadoFiltro === 'activo') cumpleEstado = isPrem;
                 if (estadoFiltro === 'inactivo') cumpleEstado = !isPrem;
 
                 let cumplePlan = true;
@@ -519,9 +424,9 @@
         }
 
         window.verHistorial = async function(userId, nombreUsuario) {
-            document.getElementById("modalTitulo").innerText = `Historial / Último Pago - ${nombreUsuario}`;
+            document.getElementById("modalTitulo").innerText = `Historial de Pagos - ${nombreUsuario}`;
             const tbodyHistorial = document.getElementById("tabla-historial");
-            tbodyHistorial.innerHTML = "<tr><td colspan='4' style='text-align:center;'>Cargando información...</td></tr>";
+            tbodyHistorial.innerHTML = "<tr><td colspan='4' style='text-align:center;'>Cargando historial...</td></tr>";
             
             document.getElementById("modalHistorial").style.display = "flex";
 
@@ -529,49 +434,29 @@
                 const querySnapshot = await getDocs(collection(db, "users", userId, "payments"));
                 tbodyHistorial.innerHTML = "";
 
-                if (!querySnapshot.empty) {
-                    let pagos = [];
-                    querySnapshot.forEach(doc => pagos.push(doc.data()));
-                    pagos.sort((a, b) => (b.timestamp || 0) - (a.timestamp || 0));
-
-                    pagos.forEach(pago => {
-                        const vencimiento = pago.expiresAt || pago.subscriptionExpiry || pago.fechaExpiracion || pago.vencimiento || pago.expires_at;
-                        const tr = document.createElement("tr");
-                        tr.innerHTML = `
-                            <td><b>${pago.plan || pago.billingCycle || 'Suscripción'}</b></td>
-                            <td>$${pago.amount !== undefined ? pago.amount : '0.00'}</td>
-                            <td>${formatearFecha(pago.paymentDate || pago.timestamp)}</td>
-                            <td>${formatearFecha(vencimiento)}</td>
-                        `;
-                        tbodyHistorial.appendChild(tr);
-                    });
-                } else {
-                    const userDocRef = doc(db, "users", userId);
-                    const userDocSnap = await getDoc(userDocRef);
-
-                    if (userDocSnap.exists()) {
-                        const userData = userDocSnap.data();
-                        
-                        if (userData.billingCycle || userData.amount !== undefined || userData.paymentDate) {
-                            const vencimientoPrincipal = userData.expiresAt || userData.subscriptionExpiry || userData.fechaExpiracion || userData.vencimiento || userData.expires_at;
-                            const tr = document.createElement("tr");
-                            tr.innerHTML = `
-                                <td><b>${userData.billingCycle || 'No pagado'}</b></td>
-                                <td>$${userData.amount !== undefined ? userData.amount : '0.00'}</td>
-                                <td>${formatearFecha(userData.paymentDate)}</td>
-                                <td>${formatearFecha(vencimientoPrincipal)}</td>
-                            `;
-                            tbodyHistorial.appendChild(tr);
-                            return;
-                        }
-                    }
-
-                    tbodyHistorial.innerHTML = "<tr><td colspan='4' style='text-align:center; color: var(--text-muted);'>No hay pagos registrados para este usuario.</td></tr>";
+                if (querySnapshot.empty) {
+                    tbodyHistorial.innerHTML = "<tr><td colspan='4' style='text-align:center; color: var(--text-muted);'>No hay pagos registrados en el historial todavía.</td></tr>";
+                    return;
                 }
 
+                let pagos = [];
+                querySnapshot.forEach(doc => pagos.push(doc.data()));
+                pagos.sort((a, b) => a.timestamp - b.timestamp);
+
+                pagos.forEach(pago => {
+                    const tr = document.createElement("tr");
+                    tr.innerHTML = `
+                        <td><b>${pago.plan}</b></td>
+                        <td>$${pago.amount}</td>
+                        <td>${formatearFecha(pago.paymentDate)}</td>
+                        <td>${formatearFecha(pago.expiresAt)}</td>
+                    `;
+                    tbodyHistorial.appendChild(tr);
+                });
+
             } catch (error) {
-                console.error("Error al cargar historial:", error);
-                tbodyHistorial.innerHTML = "<tr><td colspan='4' style='text-align:center; color: red;'>Error al cargar los datos de pago.</td></tr>";
+                console.log("Subcolección no encontrada o sin permisos:", error);
+                tbodyHistorial.innerHTML = "<tr><td colspan='4' style='text-align:center; color: var(--text-muted);'>No hay pagos registrados en el historial todavía.</td></tr>";
             }
         }
 
